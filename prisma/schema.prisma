@@ -1,0 +1,23 @@
+// Prisma schema — https://pris.ly/d/prisma-schema
+// After editing, run:  npm run db:migrate
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// A simple example model. Replace with your real domain models.
+model Note {
+  id        String   @id @default(cuid())
+  title     String
+  body      String   @default("")
+  done      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([createdAt])
+}
