@@ -48,15 +48,53 @@ export interface InventoryItem {
   kind: string;
   value: number;
   qty: number;
+  /** Combat contribution when equipped (weapons/armor). */
+  attack?: number;
+  defense?: number;
+}
+
+export type Race = "HUMAN" | "ELF" | "DWARF" | "HALFLING" | "GNOME";
+
+export type CharacterClass =
+  | "FIGHTER"
+  | "CLERIC"
+  | "WIZARD"
+  | "THIEF"
+  | "PALADIN"
+  | "RANGER"
+  | "BARBARIAN"
+  | "DRUID";
+
+export type EquipSlot = "weapon" | "armor" | "shield";
+
+export interface EquippedItem {
+  name: string;
+  kind: string;
+  attack: number;
+  defense: number;
+  value: number;
+}
+
+export interface Character {
+  name: string;
+  race: Race;
+  class: CharacterClass;
+  level: number;
+  hp: number;
+  maxHp: number;
+  stats: { str: number; dex: number; int: number; wis: number };
+  equipment: Partial<Record<EquipSlot, EquippedItem>>;
 }
 
 export interface Party {
   /** Position in tile coordinates on the current map. */
   position: Vec2;
   facing: Direction;
-  /** Purse. The full character roster (race/stats/HP) lands in the RPG bead. */
+  /** Purse shared by the party. */
   gold: number;
   inventory: InventoryItem[];
+  /** The adventuring roster. */
+  members: Character[];
 }
 
 export interface GameState {

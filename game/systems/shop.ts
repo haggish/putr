@@ -9,6 +9,8 @@ export interface ShopItem {
   name: string;
   price: number;
   kind: "weapon" | "armor" | "consumable" | "misc";
+  attack?: number;
+  defense?: number;
 }
 
 // Keyed by venue LocationCategory. Nightclubs sell nothing (on hold).
@@ -24,19 +26,19 @@ const CATALOGS: Record<string, ShopItem[]> = {
     { id: "noodles", name: "Instant Noodles", price: 3, kind: "consumable" },
   ],
   CLOTHING: [
-    { id: "tunic", name: "Cloth Tunic", price: 15, kind: "armor" },
-    { id: "jacket", name: "Leather Jacket", price: 40, kind: "armor" },
-    { id: "coat", name: "Winter Coat", price: 60, kind: "armor" },
+    { id: "tunic", name: "Cloth Tunic", price: 15, kind: "armor", defense: 2 },
+    { id: "jacket", name: "Leather Jacket", price: 40, kind: "armor", defense: 4 },
+    { id: "coat", name: "Winter Coat", price: 60, kind: "armor", defense: 6 },
   ],
   SPORT: [
     { id: "arrows", name: "Quiver of Arrows", price: 10, kind: "misc" },
-    { id: "bow", name: "Sport Bow", price: 45, kind: "weapon" },
+    { id: "bow", name: "Sport Bow", price: 45, kind: "weapon", attack: 6 },
     { id: "trainers", name: "Trainers", price: 25, kind: "misc" },
   ],
   ARMOURY: [
-    { id: "dagger", name: "Dagger", price: 20, kind: "weapon" },
-    { id: "sword", name: "Short Sword", price: 55, kind: "weapon" },
-    { id: "vest", name: "Chain Vest", price: 90, kind: "armor" },
+    { id: "dagger", name: "Dagger", price: 20, kind: "weapon", attack: 4 },
+    { id: "sword", name: "Short Sword", price: 55, kind: "weapon", attack: 8 },
+    { id: "vest", name: "Chain Vest", price: 90, kind: "armor", defense: 8 },
   ],
   BAR: [
     { id: "pint", name: "Pint of Lager", price: 3, kind: "consumable" },
@@ -83,6 +85,8 @@ export function buyItem(state: GameState, item: ShopItem): ShopResult {
       kind: item.kind,
       value: item.price,
       qty: 1,
+      attack: item.attack,
+      defense: item.defense,
     }),
   };
   const message = `Bought ${item.name} for ${item.price}g.`;

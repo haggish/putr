@@ -8,6 +8,7 @@ export * from "./world-asset";
 export * from "./systems/movement";
 export * from "./systems/interior";
 export * from "./systems/shop";
+export * from "./systems/party";
 export { CanvasRenderer, TILE_COLORS } from "./renderer/canvasRenderer";
 export type { RendererOptions } from "./renderer/canvasRenderer";
 export { GameController } from "./controller";

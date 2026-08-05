@@ -3,6 +3,7 @@
 // with the OSM-derived 256x256 overworld.
 
 import type { GameMap, GameState, Tile, TileKind } from "./types";
+import { createDefaultParty } from "./systems/party";
 
 /** A tiny hand-made map used only until the world-data pipeline produces the
  *  real inside-the-Ring asset. Border tiles are `rail` to evoke the Ring. */
@@ -40,6 +41,7 @@ export function createInitialState(worldId = "placeholder"): GameState {
       facing: "south",
       gold: 150,
       inventory: [],
+      members: createDefaultParty(),
     },
     log: ["Welcome to Penultimate I — The Ring."],
   };

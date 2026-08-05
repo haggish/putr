@@ -4,6 +4,7 @@
 // char codes here MUST match build-overworld.mjs.
 
 import type { GameMap, GameState, Tile, TileKind } from "./types";
+import { createDefaultParty } from "./systems/party";
 
 export interface VenueInfo {
   id: string;
@@ -78,6 +79,7 @@ export function stateFromAsset(asset: WorldAsset): GameState {
       facing: "south",
       gold: 150,
       inventory: [],
+      members: createDefaultParty(),
     },
     log: ["You stand within the Ring. Berlin sprawls around you."],
   };

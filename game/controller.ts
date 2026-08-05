@@ -3,12 +3,13 @@
 // against its <canvas>. Movement is event-driven (Ultima-style discrete steps),
 // so no continuous rAF loop is needed yet — the renderer is called on change.
 
-import type { GameState } from "./types";
+import type { EquipSlot, GameState } from "./types";
 import { createInitialState } from "./state";
 import { keyToDirection } from "./input";
 import { step } from "./systems/movement";
 import { enterInterior, exitInterior } from "./systems/interior";
 import { buyItem, sellItem, shopCatalogFor } from "./systems/shop";
+import { equip as equipMember, unequip as unequipMember } from "./systems/party";
 import { tileAt } from "./world";
 import type { CanvasRenderer } from "./renderer/canvasRenderer";
 import type { VenueInfo } from "./world-asset";
@@ -86,6 +87,20 @@ export class GameController {
   /** Sell the pack item at `index`; returns true on success. */
   sell(index: number): boolean {
     const r = sellItem(this.state, index);
+    this.state = r.state;
+    return r.ok;
+  }
+
+  /** Equip pack item `invIndex` onto party member `memberIndex`. */
+  equip(memberIndex: number, invIndex: number): boolean {
+    const r = equipMember(this.state, memberIndex, invIndex);
+    this.state = r.state;
+    return r.ok;
+  }
+
+  /** Unequip a slot on party member `memberIndex`, returning it to the pack. */
+  unequip(memberIndex: number, slot: EquipSlot): boolean {
+    const r = unequipMember(this.state, memberIndex, slot);
     this.state = r.state;
     return r.ok;
   }
