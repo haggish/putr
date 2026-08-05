@@ -1,0 +1,36 @@
+{
+  "type": "Feature",
+  "properties": {
+    "name": "Berlin Ringbahn enclosed area (approximate)",
+    "description": "Approximate boundary of the area inside the Berlin Ringbahn (S41/S42 circle line).",
+    "source": "Approximation from known geography; OSM Overpass not reachable at build time. Refine with real S41/S42 route-relation geometry later.",
+    "attribution": "© OpenStreetMap contributors",
+    "license": "ODbL",
+    "approximate": true
+  },
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [13.3300, 52.5390],
+        [13.3620, 52.5570],
+        [13.3900, 52.5590],
+        [13.4250, 52.5550],
+        [13.4520, 52.5350],
+        [13.4750, 52.5150],
+        [13.4700, 52.4970],
+        [13.4550, 52.4840],
+        [13.4300, 52.4770],
+        [13.3950, 52.4780],
+        [13.3650, 52.4810],
+        [13.3450, 52.4900],
+        [13.3250, 52.5000],
+        [13.2950, 52.5060],
+        [13.2840, 52.5180],
+        [13.2900, 52.5300],
+        [13.3050, 52.5360],
+        [13.3300, 52.5390]
+      ]
+    ]
+  }
+}

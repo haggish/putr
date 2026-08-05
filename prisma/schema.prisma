@@ -7,10 +7,12 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  // Prisma 7: the connection URL lives in prisma.config.ts (CLI/migrate) and is
+  // passed to PrismaClient via the pg driver adapter in lib/prisma.ts.
 }
 
-/// A simple example model. Replace with your real domain models.
+/// Demo model from the starter. Kept so the /notes example still builds;
+/// safe to delete once the demo pages are removed.
 model Note {
   id        String   @id @default(cuid())
   title     String
@@ -20,4 +22,246 @@ model Note {
   updatedAt DateTime @updatedAt
 
   @@index([createdAt])
+}
+
+// ===========================================================================
+// Penultimate I — The Ring · core domain model  (Beads nwe.3)
+//
+// Shapes: World -> (Districts, Locations, TileMaps) and
+//         Player -> Party -> Characters -> gear, over a shared World.
+// Interiors and dungeon levels are TileMaps (see TileMapKind), not a separate
+// table. The engine's serializable GameState maps onto Party + TileMap.
+// Multiplayer-ready: many Parties/PlayerSessions per World, each owned by a
+// Player (Player anchors NextAuth identity; we use JWT sessions, no DB adapter).
+// ===========================================================================
+
+enum TileMapKind {
+  OVERWORLD
+  INTERIOR
+  DUNGEON_LEVEL
+}
+
+enum LocationCategory {
+  BAR
+  RESTAURANT
+  GROCERY
+  SPAETI
+  CLOTHING
+  ARMOURY
+  SPORT
+  NIGHTCLUB
+  LANDMARK
+  OTHER
+}
+
+enum Race {
+  HUMAN
+  ELF
+  DWARF
+  HALFLING
+  GNOME
+}
+
+enum CharacterClass {
+  FIGHTER
+  CLERIC
+  WIZARD
+  THIEF
+  PALADIN
+  RANGER
+  BARBARIAN
+  DRUID
+}
+
+enum GearKind {
+  WEAPON
+  ARMOR
+  SHIELD
+  CONSUMABLE
+  MISC
+}
+
+enum EquipSlot {
+  WEAPON
+  ARMOR
+  SHIELD
+}
+
+/// A playable world. There is one canonical world (Berlin inside the Ring),
+/// but the model allows several (seasonal maps, tests, multiplayer shards).
+model World {
+  id            String     @id @default(cuid())
+  slug          String     @unique
+  name          String
+  /// Overworld dimensions in tiles and the real-world scale used to build it.
+  tileWidth     Int        @default(256)
+  tileHeight    Int        @default(256)
+  metersPerTile Float      @default(40)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  districts     District[]
+  locations     Location[]
+  tileMaps      TileMap[]
+  parties       Party[]
+  sessions      PlayerSession[]
+}
+
+/// A tile grid: the overworld, or an interior / dungeon sub-map. Large maps
+/// (the 256x256 overworld) reference a bundled static asset via assetKey;
+/// small interiors may store their tiles inline as JSON in `tiles`.
+model TileMap {
+  id        String      @id @default(cuid())
+  worldId   String
+  world     World       @relation(fields: [worldId], references: [id], onDelete: Cascade)
+  kind      TileMapKind
+  width     Int
+  height    Int
+  /// Inline tile data for small maps (interiors/dungeon levels).
+  tiles     Json?
+  /// Pointer to a bundled asset for large maps (the overworld terrain layer).
+  assetKey  String?
+  /// Interiors link back to the Location they belong to.
+  location  Location?   @relation("LocationInterior")
+  parties   Party[]
+  createdAt DateTime    @default(now())
+
+  @@index([worldId, kind])
+}
+
+/// A named region of the overworld (Mitte, Kreuzberg, ...). Drives flavor,
+/// encounter tables, and shop distribution.
+model District {
+  id        String     @id @default(cuid())
+  worldId   String
+  world     World      @relation(fields: [worldId], references: [id], onDelete: Cascade)
+  slug      String
+  name      String
+  locations Location[]
+
+  @@unique([worldId, slug])
+}
+
+/// An enterable venue placed on the overworld at (tileX, tileY). Its interior
+/// is a TileMap (kind INTERIOR / DUNGEON_LEVEL for the night-club dungeon).
+model Location {
+  id            String           @id @default(cuid())
+  worldId       String
+  world         World            @relation(fields: [worldId], references: [id], onDelete: Cascade)
+  districtId    String?
+  district      District?        @relation(fields: [districtId], references: [id])
+  name          String
+  category      LocationCategory
+  tileX         Int
+  tileY         Int
+  /// Source OSM element (e.g. "node/123456"), for provenance / ODbL.
+  osmRef        String?
+  interiorMapId String?          @unique
+  interiorMap   TileMap?         @relation("LocationInterior", fields: [interiorMapId], references: [id])
+
+  @@index([worldId, category])
+  @@index([worldId, tileX, tileY])
+}
+
+/// Ownership anchor for multiplayer. Maps to a NextAuth identity (by email /
+/// provider subject); no DB adapter, so this is populated lazily on first play.
+model Player {
+  id        String          @id @default(cuid())
+  email     String?         @unique
+  name      String?
+  createdAt DateTime        @default(now())
+
+  parties   Party[]
+  sessions  PlayerSession[]
+}
+
+/// A group of characters controlled together (Ultima-style adventuring party).
+/// Holds the live, serializable game position — this row IS the save game.
+model Party {
+  id        String      @id @default(cuid())
+  worldId   String
+  world     World       @relation(fields: [worldId], references: [id], onDelete: Cascade)
+  playerId  String
+  player    Player      @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  name      String      @default("Party")
+  /// Current map + position + facing (the walkable GameState).
+  mapId     String?
+  map       TileMap?    @relation(fields: [mapId], references: [id])
+  tileX     Int         @default(0)
+  tileY     Int         @default(0)
+  facing    String      @default("south")
+  gold      Int         @default(0)
+  /// Arbitrary progress/world flags for save/load to extend.
+  flags     Json?
+  characters Character[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([worldId])
+  @@index([playerId])
+}
+
+/// A single party member with race/class, core properties, HP, and gear.
+model Character {
+  id           String         @id @default(cuid())
+  partyId      String
+  party        Party          @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  /// Slot within the party (0-3), for ordering / formation.
+  slot         Int            @default(0)
+  name         String
+  race         Race           @default(HUMAN)
+  class        CharacterClass @default(FIGHTER)
+  level        Int            @default(1)
+  hp           Int            @default(100)
+  maxHp        Int            @default(100)
+  /// Core properties (Ultima-style attributes).
+  strength     Int            @default(10)
+  dexterity    Int            @default(10)
+  intelligence Int            @default(10)
+  wisdom       Int            @default(10)
+  gear         CharacterGear[]
+
+  @@index([partyId])
+}
+
+/// Catalog of equippable / usable items (armor, weapons, ...).
+model Gear {
+  id      String          @id @default(cuid())
+  slug    String          @unique
+  name    String
+  kind    GearKind
+  attack  Int             @default(0)
+  defense Int             @default(0)
+  value   Int             @default(0)
+  owners  CharacterGear[]
+}
+
+/// Join of a Character's inventory: which gear, how many, and whether equipped.
+model CharacterGear {
+  id          String     @id @default(cuid())
+  characterId String
+  character   Character  @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  gearId      String
+  gear        Gear       @relation(fields: [gearId], references: [id], onDelete: Cascade)
+  slot        EquipSlot?
+  equipped    Boolean    @default(false)
+  quantity    Int        @default(1)
+
+  @@index([characterId])
+}
+
+/// Active multiplayer presence: a player currently in a world with a party.
+/// The multiplayer bead builds realtime on top of this.
+model PlayerSession {
+  id         String   @id @default(cuid())
+  playerId   String
+  player     Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  worldId    String
+  world      World    @relation(fields: [worldId], references: [id], onDelete: Cascade)
+  partyId    String?
+  lastSeenAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  @@index([worldId])
+  @@index([playerId])
 }

@@ -1,0 +1,119 @@
+// Interiors (Beads dyz.1 / dyz.2 / ua1.5). Pure functions that generate a small
+// deterministic sub-map for a venue and switch the party in/out of it. Walls are
+// impassable "building", the floor is walkable "plaza", and the door (a "venue"
+// tile on the bottom wall) leads back outside. The full night-club dungeon is a
+// separate bead; nightclubs here are just a larger room.
+
+import type { GameMap, GameState, Tile, TileKind } from "../types";
+import type { VenueInfo } from "../world-asset";
+
+function hash(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function dimsFor(category: string): { width: number; height: number } {
+  switch (category) {
+    case "NIGHTCLUB":
+      return { width: 15, height: 13 };
+    case "BAR":
+    case "RESTAURANT":
+      return { width: 13, height: 11 };
+    default:
+      return { width: 11, height: 9 };
+  }
+}
+
+export function buildInterior(venue: VenueInfo): GameMap {
+  const { width, height } = dimsFor(venue.category);
+  const tiles: Tile[] = new Array(width * height);
+  const set = (x: number, y: number, kind: TileKind) => {
+    tiles[y * width + x] = { kind };
+  };
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const border = x === 0 || y === 0 || x === width - 1 || y === height - 1;
+      set(x, y, border ? "building" : "plaza");
+    }
+  }
+
+  const cx = Math.floor(width / 2);
+  set(cx, height - 1, "venue"); // the door / exit
+
+  const rnd = hash(venue.id);
+  // Place furniture, but never on the border, the spawn row, or the door column
+  // (so the exit is always reachable).
+  const furnish = (x: number, y: number) => {
+    if (x <= 0 || y <= 0 || x >= width - 1 || y >= height - 2) return;
+    if (x === cx) return;
+    set(x, y, "building");
+  };
+
+  switch (venue.category) {
+    case "BAR":
+    case "RESTAURANT":
+      for (let x = 2; x < width - 2; x++) furnish(x, 2); // a counter
+      break;
+    case "GROCERY":
+    case "SPAETI":
+      for (let x = 2; x < width - 2; x += 2)
+        for (let y = 2; y < height - 3; y++) furnish(x, y); // shelf aisles
+      break;
+    case "CLOTHING":
+    case "SPORT":
+    case "ARMOURY":
+      for (let i = 0; i < 6; i++) {
+        const x = 2 + ((rnd >> (i * 3)) % (width - 4));
+        const y = 2 + ((rnd >> (i * 3 + 1)) % (height - 4));
+        furnish(x, y); // scattered racks
+      }
+      break;
+    case "NIGHTCLUB":
+      furnish(3, 3);
+      furnish(width - 4, 3);
+      furnish(3, height - 4);
+      furnish(width - 4, height - 4); // pillars around an open floor
+      break;
+  }
+
+  return { id: `interior:${venue.id}`, width, height, tiles };
+}
+
+export function enterInterior(state: GameState, venue: VenueInfo): GameState {
+  const map = buildInterior(venue);
+  const cx = Math.floor(map.width / 2);
+  return {
+    ...state,
+    mode: "interior",
+    currentMap: map,
+    party: { ...state.party, position: { x: cx, y: map.height - 2 }, facing: "north" },
+    locationName: venue.name,
+    locationCategory: venue.category,
+    returnTo: {
+      map: state.currentMap,
+      position: { ...state.party.position },
+      mode: state.mode,
+    },
+    log: [...state.log, `You enter ${venue.name}.`].slice(-8),
+  };
+}
+
+export function exitInterior(state: GameState): GameState {
+  if (!state.returnTo) return state;
+  const { map, position, mode } = state.returnTo;
+  return {
+    ...state,
+    mode,
+    currentMap: map,
+    party: { ...state.party, position: { ...position }, facing: "south" },
+    locationName: undefined,
+    locationCategory: undefined,
+    returnTo: undefined,
+    log: [...state.log, "You step back outside."].slice(-8),
+  };
+}

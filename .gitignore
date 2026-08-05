@@ -44,3 +44,9 @@ next-env.d.ts
 *.db
 .beads-credential-key
 .beads/proxieddb/
+
+# Local Claude Code overrides (personal, machine-specific)
+.claude/settings.local.json
+
+# Raw OSM dumps (large; regenerable via world/build/fetch-*.mjs)
+world/osm/
