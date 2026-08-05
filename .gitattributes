@@ -1,0 +1,4 @@
+# Beads git hooks run via `#!/usr/bin/env sh` and break with CRLF line
+# endings (the shebang is read as `sh\r`). Pin them to LF so they stay
+# executable regardless of a clone's core.autocrlf setting.
+.beads/hooks/* text eol=lf
