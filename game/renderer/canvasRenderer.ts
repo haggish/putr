@@ -18,6 +18,7 @@ export const TILE_COLORS: Record<TileKind, string> = {
   rail: "#7a5a2a",
   plaza: "#6d5a3f",
   venue: "#b08d2a",
+  station: "#2a4b9b",
 };
 
 export interface RendererOptions {

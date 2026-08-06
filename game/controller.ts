@@ -132,4 +132,19 @@ export class GameController {
     this.state = r.state;
     return r.ok;
   }
+
+  /** Fast-travel the party to a station tile (only meaningful on the overworld). */
+  travelTo(x: number, y: number, name?: string): void {
+    if (this.state.mode !== "overworld") return;
+    const log = [
+      ...this.state.log,
+      name ? `You ride the rails to ${name}.` : "You ride the rails.",
+    ].slice(-8);
+    this.state = {
+      ...this.state,
+      party: { ...this.state.party, position: { x, y } },
+      log,
+    };
+    this.render();
+  }
 }

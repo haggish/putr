@@ -9,6 +9,8 @@ import {
   npcPersona,
   shopCatalogFor,
   stateFromAsset,
+  stationList,
+  stationMap,
   TILE_COLORS,
   venueMap,
   xpForNextLevel,
@@ -16,6 +18,7 @@ import {
   type GameState,
   type InventoryItem,
   type ShopItem,
+  type Station,
   type TileKind,
   type VenueInfo,
   type WorldAsset,
@@ -44,6 +47,7 @@ type Hud = {
   district?: string;
   place?: VenueInfo | null;
   locationName?: string;
+  onStation?: Station | null;
   gold: number;
   shop: ShopItem[];
   inventory: InventoryItem[];
@@ -63,6 +67,7 @@ const LEGEND: [TileKind, string][] = [
   ["building", "building"],
   ["rail", "the Ring"],
   ["venue", "venue"],
+  ["station", "station"],
 ];
 
 const EQUIPPABLE = new Set(["weapon", "armor", "shield"]);
@@ -71,6 +76,7 @@ export function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const controllerRef = useRef<GameController | null>(null);
   const venuesRef = useRef<Map<string, VenueInfo>>(new Map());
+  const stationByXYRef = useRef<Map<string, Station>>(new Map());
   const [hud, setHud] = useState<Hud | null>(null);
   const [selected, setSelected] = useState(0);
   const [saved, setSaved] = useState(false);
@@ -79,6 +85,7 @@ export function GameCanvas() {
   const [npcLog, setNpcLog] = useState<NpcTurn[]>([]);
   const [npcInput, setNpcInput] = useState("");
   const [npcBusy, setNpcBusy] = useState(false);
+  const [allStations, setAllStations] = useState<Station[]>([]);
 
   const refresh = useCallback(() => {
     const c = controllerRef.current;
@@ -92,6 +99,10 @@ export function GameCanvas() {
       facing: s.party.facing,
       district: tile?.district,
       place: venuesRef.current.get(`${x},${y}`) ?? null,
+      onStation:
+        tile?.kind === "station"
+          ? (stationByXYRef.current.get(`${x},${y}`) ?? null)
+          : null,
       locationName: s.locationName,
       gold: s.party.gold,
       shop: shopCatalogFor(s.locationCategory),
@@ -160,6 +171,8 @@ export function GameCanvas() {
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error("no asset"))))
       .then(async (asset: WorldAsset) => {
         venuesRef.current = venueMap(asset);
+        stationByXYRef.current = stationMap(asset);
+        setAllStations(stationList(asset));
         const base = stateFromAsset(asset);
         const loaded = await loadParty();
         if (loaded) {
@@ -218,6 +231,10 @@ export function GameCanvas() {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     }
+  };
+  const rideTo = (st: Station) => {
+    controllerRef.current?.travelTo(st.x, st.y, st.name);
+    refresh();
   };
   const openTalk = () => {
     const s = controllerRef.current?.getState();
@@ -506,6 +523,37 @@ export function GameCanvas() {
                 Send
               </button>
             </div>
+          </div>
+        ) : null}
+
+        {hud?.onStation && !hud.combat ? (
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
+            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-blue-700">
+              {hud.onStation.kind}-Bahn · {hud.onStation.name}
+            </div>
+            <p className="mb-1 text-xs text-neutral-500">Board a train to:</p>
+            <ul className="max-h-48 space-y-1 overflow-y-auto text-neutral-700">
+              {allStations
+                .filter((st) => st.id !== hud.onStation!.id)
+                .map((st) => (
+                  <li
+                    key={st.id}
+                    className="flex items-center justify-between gap-2"
+                  >
+                    <span>
+                      <span className="text-neutral-400">{st.kind}</span>{" "}
+                      {st.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => rideTo(st)}
+                      className="rounded border border-neutral-300 px-2 py-0.5 text-xs hover:bg-neutral-100"
+                    >
+                      Ride
+                    </button>
+                  </li>
+                ))}
+            </ul>
           </div>
         ) : null}
 

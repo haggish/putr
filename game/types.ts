@@ -20,7 +20,8 @@ export type TileKind =
   | "park" // green, walkable
   | "rail" // the Ring & tracks — impassable barrier
   | "plaza" // open squares — walkable
-  | "venue"; // enterable location marker — walkable, carries a locationId
+  | "venue" // enterable location marker — walkable, carries a locationId
+  | "station"; // U-/S-Bahn station — walkable, board here to fast-travel
 
 export interface Tile {
   kind: TileKind;

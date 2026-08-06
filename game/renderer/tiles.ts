@@ -103,6 +103,19 @@ export const TILE_PATTERNS: Record<TileKind, TilePattern> = {
       "########",
     ],
   },
+  station: {
+    palette: { "#": "#16306a", ".": "#2a4b9b", o: "#e6ecf5" },
+    rows: [
+      "########",
+      "#......#",
+      "#.oooo.#",
+      "#.o..o.#",
+      "#.o..o.#",
+      "#.oooo.#",
+      "#......#",
+      "########",
+    ],
+  },
 };
 
 export const SPRITES: Record<"hero" | "foe", TilePattern> = {

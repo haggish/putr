@@ -14,6 +14,15 @@ export interface VenueInfo {
   y: number;
 }
 
+export interface Station {
+  id: string;
+  name: string;
+  x: number;
+  y: number;
+  /** "U" (U-Bahn) or "S" (S-Bahn). */
+  kind: string;
+}
+
 export interface WorldAsset {
   id: string;
   width: number;
@@ -27,6 +36,7 @@ export interface WorldAsset {
   districts?: string[];
   districtGrid?: string;
   venues?: VenueInfo[];
+  stations?: Station[];
 }
 
 const CODE_TO_KIND: Record<string, TileKind> = {
@@ -37,6 +47,7 @@ const CODE_TO_KIND: Record<string, TileKind> = {
   v: "venue",
   b: "building",
   z: "plaza",
+  s: "station",
 };
 
 export function mapFromAsset(asset: WorldAsset): GameMap {
@@ -66,6 +77,17 @@ export function mapFromAsset(asset: WorldAsset): GameMap {
 export function venueMap(asset: WorldAsset): Map<string, VenueInfo> {
   const m = new Map<string, VenueInfo>();
   for (const v of asset.venues ?? []) m.set(`${v.x},${v.y}`, v);
+  return m;
+}
+
+export function stationList(asset: WorldAsset): Station[] {
+  return asset.stations ?? [];
+}
+
+/** Lookup of station by "x,y" tile key — used to detect boarding. */
+export function stationMap(asset: WorldAsset): Map<string, Station> {
+  const m = new Map<string, Station>();
+  for (const s of asset.stations ?? []) m.set(`${s.x},${s.y}`, s);
   return m;
 }
 
