@@ -4,6 +4,7 @@
 
 import type {
   Character,
+  CharacterClass,
   EquipSlot,
   GameState,
   InventoryItem,
@@ -12,11 +13,53 @@ import type {
 /** The default starting party (four classic archetypes). */
 export function createDefaultParty(): Character[] {
   return [
-    { name: "Ragna", race: "HUMAN", class: "FIGHTER", level: 1, hp: 30, maxHp: 30, stats: { str: 15, dex: 11, int: 8, wis: 9 }, equipment: {} },
-    { name: "Bruno", race: "DWARF", class: "CLERIC", level: 1, hp: 24, maxHp: 24, stats: { str: 12, dex: 10, int: 10, wis: 14 }, equipment: {} },
-    { name: "Sela", race: "ELF", class: "WIZARD", level: 1, hp: 18, maxHp: 18, stats: { str: 8, dex: 12, int: 15, wis: 11 }, equipment: {} },
-    { name: "Pip", race: "HALFLING", class: "THIEF", level: 1, hp: 22, maxHp: 22, stats: { str: 9, dex: 15, int: 11, wis: 8 }, equipment: {} },
+    { name: "Ragna", race: "HUMAN", class: "FIGHTER", level: 1, xp: 0, hp: 30, maxHp: 30, stats: { str: 15, dex: 11, int: 8, wis: 9 }, equipment: {} },
+    { name: "Bruno", race: "DWARF", class: "CLERIC", level: 1, xp: 0, hp: 24, maxHp: 24, stats: { str: 12, dex: 10, int: 10, wis: 14 }, equipment: {} },
+    { name: "Sela", race: "ELF", class: "WIZARD", level: 1, xp: 0, hp: 18, maxHp: 18, stats: { str: 8, dex: 12, int: 15, wis: 11 }, equipment: {} },
+    { name: "Pip", race: "HALFLING", class: "THIEF", level: 1, xp: 0, hp: 22, maxHp: 22, stats: { str: 9, dex: 15, int: 11, wis: 8 }, equipment: {} },
   ];
+}
+
+/** XP needed to advance FROM `level` to the next. */
+export function xpForNextLevel(level: number): number {
+  return level * 100;
+}
+
+const PRIMARY_STAT: Record<CharacterClass, keyof Character["stats"]> = {
+  FIGHTER: "str",
+  BARBARIAN: "str",
+  PALADIN: "str",
+  THIEF: "dex",
+  RANGER: "dex",
+  WIZARD: "int",
+  CLERIC: "wis",
+  DRUID: "wis",
+};
+
+function levelUpOnce(c: Character): Character {
+  const stats = { ...c.stats };
+  stats[PRIMARY_STAT[c.class]] += 1;
+  const maxHp = c.maxHp + 6;
+  return { ...c, level: c.level + 1, maxHp, hp: maxHp, stats };
+}
+
+/** Grant XP to living members and apply level-ups (max HP + primary stat, full
+ *  heal on level). Returns new members plus human-readable level-up messages. */
+export function grantXp(
+  members: Character[],
+  xp: number,
+): { members: Character[]; ups: string[] } {
+  const ups: string[] = [];
+  const out = members.map((m) => {
+    if (m.hp <= 0 || xp <= 0) return m;
+    let c: Character = { ...m, xp: (m.xp ?? 0) + xp };
+    while (c.xp >= xpForNextLevel(c.level)) {
+      c = { ...levelUpOnce(c), xp: c.xp - xpForNextLevel(c.level) };
+      ups.push(`${c.name} reaches level ${c.level}!`);
+    }
+    return c;
+  });
+  return { members: out, ups };
 }
 
 export function characterAttack(c: Character): number {

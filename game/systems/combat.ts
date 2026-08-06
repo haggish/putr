@@ -5,7 +5,7 @@
 
 import type { Combatant, Direction, GameMap, GameState, Tile } from "../types";
 import { DIRECTIONS } from "../types";
-import { characterAttack, characterDefense } from "./party";
+import { characterAttack, characterDefense, grantXp } from "./party";
 import type { MonsterTemplate } from "./monsters";
 
 const ARENA = 11;
@@ -57,6 +57,7 @@ export function startCombat(
       atk: mo.atk,
       def: mo.def,
       reward: mo.reward,
+      xpReward: mo.xp,
     });
   });
   return {
@@ -184,7 +185,7 @@ export function resolveCombat(state: GameState): GameState {
   const rt = state.returnTo;
   if (!c || !c.outcome || !rt) return state;
 
-  const members = state.party.members.map((m, i) => {
+  let members = state.party.members.map((m, i) => {
     const cb = c.combatants.find((k) => k.memberIndex === i);
     return cb ? { ...m, hp: Math.max(0, cb.hp) } : { ...m };
   });
@@ -196,7 +197,13 @@ export function resolveCombat(state: GameState): GameState {
       .filter((k) => k.side === "monster")
       .reduce((s, k) => s + (k.reward ?? 0), 0);
     gold += reward;
-    log.push(`Victory! You loot ${reward}g.`);
+    const xp = c.combatants
+      .filter((k) => k.side === "monster")
+      .reduce((s, k) => s + (k.xpReward ?? 0), 0);
+    const g = grantXp(members, xp);
+    members = g.members;
+    log.push(`Victory! You loot ${reward}g and ${xp} XP.`);
+    g.ups.forEach((u) => log.push(u));
   } else if (c.outcome === "lost") {
     gold = Math.floor(gold / 2);
     for (const m of members) m.hp = Math.max(1, m.hp);

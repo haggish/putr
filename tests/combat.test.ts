@@ -26,7 +26,7 @@ function withCombat(combatants: Combatant[], activeId: string): GameState {
 describe("combat", () => {
   it("starts with the whole party and the monsters", () => {
     const s = startCombat(createInitialState(), [
-      { name: "Drug Addict", hp: 8, atk: 3, def: 0, reward: 4 },
+      { name: "Drug Addict", hp: 8, atk: 3, def: 0, reward: 4, xp: 5 },
     ]);
     expect(s.mode).toBe("combat");
     expect(s.combat?.combatants.filter((c) => c.side === "party").length).toBe(4);
@@ -66,7 +66,7 @@ describe("combat", () => {
 
   it("fleeing returns to the overworld", () => {
     const s = startCombat(createInitialState(), [
-      { name: "Wild Boar", hp: 18, atk: 5, def: 2, reward: 6 },
+      { name: "Wild Boar", hp: 18, atk: 5, def: 2, reward: 6, xp: 12 },
     ]);
     const out = resolveCombat(fleeCombat(s));
     expect(out.mode).toBe("overworld");

@@ -10,6 +10,7 @@ import {
   stateFromAsset,
   TILE_COLORS,
   venueMap,
+  xpForNextLevel,
   type Direction,
   type GameState,
   type InventoryItem,
@@ -24,6 +25,8 @@ type MemberView = {
   name: string;
   race: string;
   class: string;
+  level: number;
+  xp: number;
   hp: number;
   maxHp: number;
   atk: number;
@@ -90,6 +93,8 @@ export function GameCanvas() {
         name: m.name,
         race: m.race,
         class: m.class,
+        level: m.level,
+        xp: m.xp ?? 0,
         hp: m.hp,
         maxHp: m.maxHp,
         atk: characterAttack(m),
@@ -323,6 +328,9 @@ export function GameCanvas() {
                         <span>
                           ATK {m.atk} · DEF {m.def}
                         </span>
+                      </div>
+                      <div className="mt-0.5 text-[10px] text-neutral-500">
+                        Lv {m.level} · XP {m.xp}/{xpForNextLevel(m.level)}
                       </div>
                     </button>
                     {(m.weapon || m.armor) && (

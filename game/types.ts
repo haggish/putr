@@ -80,6 +80,7 @@ export interface Character {
   race: Race;
   class: CharacterClass;
   level: number;
+  xp: number;
   hp: number;
   maxHp: number;
   stats: { str: number; dex: number; int: number; wis: number };
@@ -112,6 +113,8 @@ export interface Combatant {
   memberIndex?: number;
   /** Monster gold reward on defeat. */
   reward?: number;
+  /** Monster XP reward on defeat. */
+  xpReward?: number;
 }
 
 export interface CombatState {

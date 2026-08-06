@@ -8,16 +8,17 @@ export interface MonsterTemplate {
   atk: number;
   def: number;
   reward: number;
+  xp: number;
 }
 
 const MONSTERS: Record<string, MonsterTemplate> = {
-  addict: { name: "Drug Addict", hp: 8, atk: 3, def: 0, reward: 4 },
-  thief: { name: "Thief", hp: 12, atk: 4, def: 1, reward: 8 },
-  boar: { name: "Wild Boar", hp: 18, atk: 5, def: 2, reward: 6 },
+  addict: { name: "Drug Addict", hp: 8, atk: 3, def: 0, reward: 4, xp: 5 },
+  thief: { name: "Thief", hp: 12, atk: 4, def: 1, reward: 8, xp: 10 },
+  boar: { name: "Wild Boar", hp: 18, atk: 5, def: 2, reward: 6, xp: 12 },
   // "unreal" / exotic foes
-  wraith: { name: "Neon Wraith", hp: 14, atk: 6, def: 2, reward: 15 },
-  troll: { name: "U-Bahn Troll", hp: 26, atk: 7, def: 3, reward: 20 },
-  specter: { name: "Rave Specter", hp: 16, atk: 6, def: 1, reward: 14 },
+  wraith: { name: "Neon Wraith", hp: 14, atk: 6, def: 2, reward: 15, xp: 20 },
+  troll: { name: "U-Bahn Troll", hp: 26, atk: 7, def: 3, reward: 20, xp: 30 },
+  specter: { name: "Rave Specter", hp: 16, atk: 6, def: 1, reward: 14, xp: 18 },
 };
 
 // Weighted draw lists keyed by tile kind (repeats = higher chance).
