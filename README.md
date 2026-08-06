@@ -1,176 +1,192 @@
-# Next.js Full-Stack Starter (the boring, reliable one)
+# Penultimate I — The Ring
 
-A proven, widely used, up-to-date full stack. Nothing exotic — just the things
-most teams reach for in 2026 and the fewest surprises possible.
+An Ultima III-inspired, tile-based, keyboard-driven action-adventure set inside
+the real city of **Berlin, bounded by the S-Bahn Ring (S41/S42)**. The overworld
+is built from OpenStreetMap data; you explore actual streets, parks, the Spree,
+and named districts, drop into bars/spätis/shops, ride the U-/S-Bahn, fight
+encounters, level up, and raid night-club dungeons.
+
+It's built on a boring, reliable Next.js full-stack (the original starter README
+is preserved in the setup steps below): **Server Actions are the backend**, the
+game engine is a pure, DOM-free TypeScript core with thin browser adapters, and
+world/save data lives in Postgres via Prisma.
+
+> Homage, not clone: game *mechanics* (tile movement, HP/armor, shops, dungeons)
+> are reimplemented; all art is original and the world data is OpenStreetMap.
+> See [`docs/ATTRIBUTION.md`](docs/ATTRIBUTION.md).
+
+## What's in it
+
+- **Real Berlin overworld** — a 324×229 tile map (~40 m/tile) inside the Ring,
+  from OSM: water, parks, streets, 90 districts, 600 placed venues.
+- **Party & RPG** — create a party (race/class/point-buy stats) or use the
+  default four; HP, gear you buy and equip, XP and leveling.
+- **Explore & interact** — enter venues into interior sub-maps; shop (buy/sell/
+  equip); talk to AI-driven keepers (Claude API).
+- **Combat** — ~10% random encounters on streets/parks → turn-based tile arena
+  vs. drug addicts, thieves, wild boars, and exotic foes; loot + XP on victory.
+- **Transit** — 121 U-/S-Bahn stations; stand on one to fast-travel.
+- **Night-club dungeons** — a maze interior with a boss (the Techno Titan) and
+  loot.
+- **Save/resume** — persisted to Postgres; multiplayer-ready (auth-linked
+  ownership, presence), realtime deferred.
 
 | Layer        | Choice                                             |
 | ------------ | -------------------------------------------------- |
 | Framework    | **Next.js 16** (App Router) on **React 19**        |
 | Language     | **TypeScript** (strict)                            |
-| Database     | **PostgreSQL 17**                                  |
-| ORM          | **Prisma 7**                                       |
-| Styling      | **Tailwind CSS v4** + shadcn/ui-style components   |
-| Validation   | **Zod**                                            |
+| Game render  | **HTML5 Canvas 2D** + original pixel tiles         |
+| Database     | **PostgreSQL 17** + **Prisma 7** (pg driver adapter) |
+| Styling      | **Tailwind CSS v4**                                |
+| AI NPCs      | **@anthropic-ai/sdk** (server-side, optional)      |
 | Auth (opt.)  | **Auth.js / NextAuth v5** (disabled until you set it up) |
-| Testing      | **Vitest** + Testing Library                       |
-
-The frontend and backend live in one codebase: React components render the UI,
-and Server Actions + Route Handlers are your backend. There's a working
-**Notes** CRUD example (`/notes`) that exercises the whole stack.
+| Testing      | **Vitest**                                         |
 
 ---
 
 ## Quick start (WSL2 on Windows)
 
-These steps assume you've unpacked this folder inside your WSL2 home directory
-(e.g. `~/projects/nextjs-fullstack-starter`), **not** under `/mnt/c/...`.
-Keeping the project on the Linux filesystem makes file watching and installs
-dramatically faster.
+Keep the project on the Linux filesystem (e.g. `~/projects/...`, **not**
+`/mnt/c/...`) for fast file watching and installs.
 
-### 1. Install Node 22 (via nvm)
-
-If you don't already have Node 22 in your WSL2 distro:
+### 1. Node 22
 
 ```bash
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
-# restart your shell, then:
-nvm install    # picks up the version in .nvmrc (22)
+nvm install    # picks up .nvmrc (22)
 nvm use
-node -v        # should print v22.x
+node -v        # v22.x
 ```
 
-### 2. Start PostgreSQL
-
-**Option A — Docker (recommended, easiest):**
+### 2. Postgres
 
 ```bash
-docker compose up -d
+docker compose up -d      # Postgres 17 with the credentials the default .env expects
 ```
 
-This starts Postgres 17 with the exact credentials the default `.env` expects.
-(If you're on Docker Desktop for Windows, make sure WSL integration is enabled;
-otherwise install Docker directly in your distro.)
-
-**Option B — Postgres installed in WSL2 directly:**
-
-```bash
-sudo apt update && sudo apt install -y postgresql
-sudo service postgresql start
-sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
-sudo -u postgres createdb app_dev
-```
-
-Either way, the connection string in `.env` is:
+The `.env` connection string is:
 
 ```
 postgresql://postgres:postgres@localhost:5432/app_dev?schema=public
 ```
 
-Adjust it if your setup differs.
-
-### 3. Install dependencies
+### 3. Install, migrate, seed the world
 
 ```bash
-npm install
+npm install               # postinstall runs prisma generate
+npm run db:migrate        # apply migrations (game domain model)
+npm run db:seed:world     # seed World + 90 districts + 600 locations from the asset
 ```
 
-(`postinstall` runs `prisma generate` automatically.)
+The generated world asset is committed at
+`public/world/berlin-overworld.json`, so **no network is needed to play**. To
+regenerate it from scratch you'd run the pipeline in `world/build/` (which does
+hit the OpenStreetMap Overpass API).
 
-### 4. Create the database schema
-
-```bash
-npm run db:migrate       # creates tables from prisma/schema.prisma
-npm run db:seed          # optional: inserts a few example notes
-```
-
-### 5. Run the dev server
+### 4. Play
 
 ```bash
 npm run dev
 ```
 
-Open <http://localhost:3000>. Visit **/notes** to try the CRUD demo.
+Open **<http://localhost:3000/play>**. (Or `/play/create` to roll a custom
+party.)
 
-> In WSL2, `localhost` forwarding to Windows usually works out of the box on
-> recent Windows 11 builds. If the browser can't reach it, grab the WSL IP with
-> `hostname -I` and use that instead.
+**Controls:** arrow keys / WASD to move · **Enter** on a gold venue to go
+inside · **F** to flee combat · buttons in the side panel for shop, equip, talk,
+travel, and save.
+
+### 5. (Optional) Bring the AI NPCs to life
+
+NPC dialogue calls the Claude API server-side. Without a key you get a graceful
+placeholder line. To enable real replies, set in `.env`:
+
+```
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+The key stays server-side (used only in `app/play/npc-actions.ts`). Model
+defaults to `claude-opus-4-8`; swap `NPC_MODEL` to `claude-haiku-4-5` there for
+a cheaper/faster keeper.
 
 ---
 
-## Project layout
+## How it's built
+
+- **Engine** (`game/`) — a pure, DOM-free core (`types`, `world`, `state`,
+  `input`, `systems/*` for movement/interiors/shop/party/combat/monsters/npc)
+  that is fully unit-testable, plus browser adapters (`renderer/`, `controller`).
+  See [`game/ARCHITECTURE.md`](game/ARCHITECTURE.md).
+- **World pipeline** (`world/`) — projection + Overpass fetch/rasterize scripts
+  that emit the static overworld asset; the engine loads it at runtime.
+- **Next.js glue** — a Server Component/route loads the asset + save, a `/play`
+  Client Component runs the canvas, and **Server Actions** (`app/play/*.ts`)
+  handle save/load (Prisma) and NPC dialogue (Claude). Mirrors the `/notes` demo.
+- **Persistence & multiplayer** — one `Party` (= save) per player per world;
+  `PlayerSession` carries presence; identity links to NextAuth by email with a
+  local fallback. See [`docs/MULTIPLAYER.md`](docs/MULTIPLAYER.md).
+
+### Project layout
 
 ```
-app/
-  layout.tsx            Root layout + nav
-  page.tsx              Landing page
-  notes/
-    page.tsx            Server Component: lists notes
-    note-form.tsx       Client Component: create form (useActionState)
-    actions.ts          Server Actions (create/toggle/delete) + Zod validation
-  dashboard/page.tsx    Protected page example (needs Auth.js enabled)
-  api/auth/[...nextauth]/route.ts   Auth.js route handler (opt-in)
-components/ui/          Button, Input (shadcn/ui conventions)
-lib/
-  prisma.ts            PrismaClient singleton (hot-reload safe)
-  utils.ts             cn() class-merge helper
+game/                 engine (pure core + canvas/controller adapters)
+  ARCHITECTURE.md
+world/
+  lib/projection.mjs  lat/lon -> tile grid
+  build/*.mjs         fetch (OSM/Overpass) + rasterize -> asset
+public/world/berlin-overworld.json   committed overworld asset
+app/play/
+  page.tsx            /play route
+  create/page.tsx     character creation
+  game-canvas.tsx     client: canvas + HUD
+  actions.ts          save/load (Server Actions)
+  npc-actions.ts      AI NPC dialogue (Claude, server-side)
 prisma/
-  schema.prisma        Note model
-  seed.ts              Example seed data
-tests/                 Vitest unit tests
+  schema.prisma       World/District/Location/Player/Party/Character/... 
+  seed-world.ts       world seed (npm run db:seed:world)
+docs/                 ATTRIBUTION.md, MULTIPLAYER.md
+tests/                Vitest (movement, interiors, shop, party, xp, combat,
+                      transit, dungeon, tiles, npc, ...)
 ```
 
 ## Common commands
 
 ```bash
-npm run dev          # start dev server
-npm run build        # prisma generate + production build
-npm run start        # run the production build
-npm run lint         # eslint
-npm run format       # prettier --write .
-npm run test         # run unit tests once
-npm run db:migrate   # create/apply a migration
-npm run db:studio    # open Prisma Studio (visual DB browser)
-npm run db:seed      # seed example data
+npm run dev            # dev server
+npm run build          # prisma generate + production build
+npm run test           # run all unit tests (Vitest)
+npm run db:migrate     # create/apply a migration
+npm run db:seed:world  # seed the game world (World/Districts/Locations)
+npm run db:studio      # visual DB browser
 ```
 
-## Adding UI components
+---
 
-This project follows shadcn/ui conventions and includes `components.json`, so
-you can pull in more prebuilt, accessible components any time:
+## Data & licensing
+
+- **World & venue data** © OpenStreetMap contributors, **ODbL**. The generated
+  world asset is a derived database.
+- **All art is original** (hand-authored pixel tiles); no Ultima/Origin/EA
+  assets are used. "Ultima"/"Exodus" are referenced only nominatively.
+- Transit data is currently OSM (ODbL); a VBB/BVG GTFS license TODO is tracked.
+
+Full details and the asset registry: [`docs/ATTRIBUTION.md`](docs/ATTRIBUTION.md).
+
+## Optional: Authentication (enables per-user saves)
+
+Auth.js (NextAuth v5) is wired but inactive so the game runs immediately as a
+single local player. Turn it on:
 
 ```bash
-npx shadcn@latest add dialog dropdown-menu table
+npx auth secret        # writes AUTH_SECRET into .env
 ```
 
----
-
-## Optional: Authentication
-
-Auth.js (NextAuth v5) is wired up but **inactive** so the app runs immediately.
-To turn it on:
-
-1. Generate a session secret:
-
-   ```bash
-   npx auth secret        # writes AUTH_SECRET into .env
-   ```
-
-2. Create a GitHub OAuth app at
-   <https://github.com/settings/developers> with callback URL
-   `http://localhost:3000/api/auth/callback/github`, then set `AUTH_GITHUB_ID`
-   and `AUTH_GITHUB_SECRET` in `.env`.
-
-3. Visit **/dashboard** — it's a protected page that will prompt you to sign in.
-
-Swap in any other provider (Google, credentials, email) by editing `auth.ts`.
-For database-backed sessions, add the Prisma adapter — see
-<https://authjs.dev/getting-started/adapters/prisma>.
-
----
+Create a GitHub OAuth app (callback
+`http://localhost:3000/api/auth/callback/github`) and set `AUTH_GITHUB_ID` /
+`AUTH_GITHUB_SECRET`. Once signed in, each user automatically gets their own
+per-world save — no code change (see `app/play/actions.ts` + `docs/MULTIPLAYER.md`).
 
 ## Deploying
 
-The zero-config path is **Vercel** (`vercel` CLI or connect the Git repo) —
-just add your `DATABASE_URL` and any auth env vars. For a portable deploy,
-`npm run build` produces a standard Next.js server you can run in any Node 22
-container behind your own Postgres.
+`npm run build` produces a standard Next.js server for any Node 22 host behind
+your own Postgres; set `DATABASE_URL` (and `ANTHROPIC_API_KEY` for live NPCs).
+Note the world seed (`npm run db:seed:world`) must run once against the target DB.
