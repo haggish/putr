@@ -1,11 +1,13 @@
 "use server";
 
-// Save/load the party to Postgres (Bead ua1.7). Auth is dormant, so this uses a
-// single local slot (one Party row for a "local" player). The rich runtime
-// party (members, inventory) rides along in Party.flags JSON; position/gold live
-// in real columns. Follows the /notes Server Action pattern.
+// Save/load the party to Postgres (Beads ua1.7 + 44n.2). Player-aware: a
+// signed-in NextAuth user (by email) gets their own per-world save; when auth is
+// dormant (the default here) everything falls back to a shared "local" player.
+// One Party per (player, world) via the composite unique key; a PlayerSession
+// row records presence for a future realtime layer. Follows the /notes pattern.
 
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/auth";
 import type { Character, InventoryItem } from "@/game";
 
 export interface SaveSnapshot {
@@ -18,8 +20,37 @@ export interface SaveSnapshot {
 }
 
 const WORLD_SLUG = "berlin-ring";
-const PLAYER_ID = "local";
-const SAVE_ID = "local-save";
+
+/** Signed-in NextAuth user (by email) if present, else the shared local slot. */
+async function resolvePlayer(): Promise<{ id: string; name: string }> {
+  try {
+    const session = await auth();
+    const email = session?.user?.email;
+    if (email) {
+      const p = await prisma.player.upsert({
+        where: { email },
+        update: {
+          name: session.user?.name ?? undefined,
+          image: session.user?.image ?? undefined,
+        },
+        create: {
+          email,
+          name: session.user?.name ?? undefined,
+          image: session.user?.image ?? undefined,
+        },
+      });
+      return { id: p.id, name: p.name ?? "Adventurer" };
+    }
+  } catch {
+    // Auth not configured — fall through to the local slot.
+  }
+  const local = await prisma.player.upsert({
+    where: { id: "local" },
+    update: {},
+    create: { id: "local", name: "Local Player" },
+  });
+  return { id: local.id, name: local.name ?? "Local Player" };
+}
 
 export async function saveParty(
   snap: SaveSnapshot,
@@ -28,11 +59,7 @@ export async function saveParty(
   if (!world) {
     return { ok: false, error: "World not seeded — run npm run db:seed:world." };
   }
-  await prisma.player.upsert({
-    where: { id: PLAYER_ID },
-    update: {},
-    create: { id: PLAYER_ID, name: "Local Player" },
-  });
+  const player = await resolvePlayer();
   const flags = JSON.parse(
     JSON.stringify({ members: snap.members, inventory: snap.inventory }),
   );
@@ -44,21 +71,36 @@ export async function saveParty(
     flags,
   };
   await prisma.party.upsert({
-    where: { id: SAVE_ID },
+    where: { playerId_worldId: { playerId: player.id, worldId: world.id } },
     update: fields,
     create: {
-      id: SAVE_ID,
       worldId: world.id,
-      playerId: PLAYER_ID,
-      name: "Party",
+      playerId: player.id,
+      name: player.name,
       ...fields,
+    },
+  });
+  // Presence — a realtime layer renders other parties from PlayerSession rows.
+  await prisma.playerSession.upsert({
+    where: { playerId_worldId: { playerId: player.id, worldId: world.id } },
+    update: { tileX: snap.x, tileY: snap.y, lastSeenAt: new Date() },
+    create: {
+      playerId: player.id,
+      worldId: world.id,
+      tileX: snap.x,
+      tileY: snap.y,
     },
   });
   return { ok: true };
 }
 
 export async function loadParty(): Promise<SaveSnapshot | null> {
-  const p = await prisma.party.findUnique({ where: { id: SAVE_ID } });
+  const world = await prisma.world.findUnique({ where: { slug: WORLD_SLUG } });
+  if (!world) return null;
+  const player = await resolvePlayer();
+  const p = await prisma.party.findUnique({
+    where: { playerId_worldId: { playerId: player.id, worldId: world.id } },
+  });
   if (!p) return null;
   const flags = (p.flags ?? {}) as {
     members?: Character[];
