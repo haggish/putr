@@ -13,4 +13,6 @@ export * from "./systems/monsters";
 export * from "./systems/combat";
 export { CanvasRenderer, TILE_COLORS } from "./renderer/canvasRenderer";
 export type { RendererOptions } from "./renderer/canvasRenderer";
+export { TILE_PATTERNS, SPRITES } from "./renderer/tiles";
+export type { TilePattern } from "./renderer/tiles";
 export { GameController } from "./controller";

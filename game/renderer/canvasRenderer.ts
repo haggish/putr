@@ -3,6 +3,12 @@
 // tileset bead swaps these for sprites from the atlas.
 
 import type { GameState, TileKind } from "../types";
+import {
+  renderTilePattern,
+  SPRITES,
+  TILE_PATTERNS,
+  type TilePattern,
+} from "./tiles";
 
 export const TILE_COLORS: Record<TileKind, string> = {
   water: "#2a4d69",
@@ -24,6 +30,9 @@ export interface RendererOptions {
 export class CanvasRenderer {
   private readonly tileSize: number;
   private readonly viewTiles: number;
+  private readonly atlas: Partial<Record<TileKind, HTMLCanvasElement>> = {};
+  private readonly sprites: Partial<Record<"hero" | "foe", HTMLCanvasElement>> =
+    {};
 
   constructor(
     private readonly ctx: CanvasRenderingContext2D,
@@ -31,6 +40,34 @@ export class CanvasRenderer {
   ) {
     this.tileSize = opts.tileSize ?? 32;
     this.viewTiles = opts.viewTiles ?? 11;
+    this.buildAtlas();
+  }
+
+  /** Pre-bake each pixel pattern into a reusable tile-sized canvas. */
+  private buildAtlas(): void {
+    if (typeof document === "undefined") return;
+    const bake = (pattern: TilePattern) => {
+      const c = document.createElement("canvas");
+      c.width = this.tileSize;
+      c.height = this.tileSize;
+      const cx = c.getContext("2d");
+      if (cx) renderTilePattern(cx, pattern, 0, 0, this.tileSize);
+      return c;
+    };
+    (Object.keys(TILE_PATTERNS) as TileKind[]).forEach((k) => {
+      this.atlas[k] = bake(TILE_PATTERNS[k]);
+    });
+    this.sprites.hero = bake(SPRITES.hero);
+    this.sprites.foe = bake(SPRITES.foe);
+  }
+
+  private drawTile(kind: TileKind, px: number, py: number): void {
+    const img = this.atlas[kind];
+    if (img) this.ctx.drawImage(img, px, py);
+    else {
+      this.ctx.fillStyle = TILE_COLORS[kind];
+      this.ctx.fillRect(px, py, this.tileSize, this.tileSize);
+    }
   }
 
   /** Canvas pixel size this renderer expects. */
@@ -57,19 +94,23 @@ export class CanvasRenderer {
         if (mx < 0 || my < 0 || mx >= map.width || my >= map.height) continue;
         const tile = map.tiles[my * map.width + mx];
         if (!tile) continue;
-        this.ctx.fillStyle = TILE_COLORS[tile.kind];
-        this.ctx.fillRect(vx * ts, vy * ts, ts, ts);
+        this.drawTile(tile.kind, vx * ts, vy * ts);
       }
     }
 
     // Party is always centered.
-    this.ctx.fillStyle = "#e8e8e8";
-    this.ctx.fillRect(
-      half * ts + ts * 0.2,
-      half * ts + ts * 0.2,
-      ts * 0.6,
-      ts * 0.6,
-    );
+    const hero = this.sprites.hero;
+    if (hero) {
+      this.ctx.drawImage(hero, half * ts, half * ts);
+    } else {
+      this.ctx.fillStyle = "#e8e8e8";
+      this.ctx.fillRect(
+        half * ts + ts * 0.2,
+        half * ts + ts * 0.2,
+        ts * 0.6,
+        ts * 0.6,
+      );
+    }
   }
 
   /** Render the battle arena (an 11x11 map) with every combatant. */
@@ -84,20 +125,24 @@ export class CanvasRenderer {
       for (let x = 0; x < map.width; x++) {
         const t = map.tiles[y * map.width + x];
         if (!t) continue;
-        this.ctx.fillStyle = TILE_COLORS[t.kind];
-        this.ctx.fillRect(x * ts, y * ts, ts, ts);
+        this.drawTile(t.kind, x * ts, y * ts);
       }
     }
     if (!combat) return;
     for (const c of combat.combatants) {
       if (c.hp <= 0) continue;
-      this.ctx.fillStyle = c.side === "party" ? "#dfe6ee" : "#c0392b";
-      this.ctx.fillRect(
-        c.x * ts + ts * 0.15,
-        c.y * ts + ts * 0.15,
-        ts * 0.7,
-        ts * 0.7,
-      );
+      const spr = c.side === "party" ? this.sprites.hero : this.sprites.foe;
+      if (spr) {
+        this.ctx.drawImage(spr, c.x * ts, c.y * ts);
+      } else {
+        this.ctx.fillStyle = c.side === "party" ? "#dfe6ee" : "#c0392b";
+        this.ctx.fillRect(
+          c.x * ts + ts * 0.15,
+          c.y * ts + ts * 0.15,
+          ts * 0.7,
+          ts * 0.7,
+        );
+      }
       if (c.id === combat.activeId) {
         this.ctx.strokeStyle = "#f1c40f";
         this.ctx.lineWidth = 2;

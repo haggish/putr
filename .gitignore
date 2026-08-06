@@ -50,3 +50,6 @@ next-env.d.ts
 
 # Raw OSM dumps (large; regenerable via world/build/fetch-*.mjs)
 world/osm/
+
+# Dev preview artifact
+world/tileset-preview.png
