@@ -41,3 +41,21 @@ export function rollEncounter(
   }
   return out;
 }
+
+/** Exotic foes for a night-club dungeon; 1-2 per encounter. */
+export function clubEncounter(
+  rng: () => number = Math.random,
+): MonsterTemplate[] {
+  const pool = ["wraith", "specter", "troll"];
+  const n = 1 + Math.floor(rng() * 2);
+  const out: MonsterTemplate[] = [];
+  for (let i = 0; i < n; i++) {
+    out.push({ ...MONSTERS[pool[Math.floor(rng() * pool.length)]] });
+  }
+  return out;
+}
+
+/** The night-club dungeon boss. */
+export function clubBoss(): MonsterTemplate {
+  return { name: "Techno Titan", hp: 44, atk: 9, def: 4, reward: 60, xp: 60 };
+}

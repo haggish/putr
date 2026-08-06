@@ -40,11 +40,6 @@ describe("xp & leveling", () => {
     const state = {
       ...base,
       mode: "combat" as const,
-      returnTo: {
-        map: base.currentMap,
-        position: { ...base.party.position },
-        mode: "overworld" as const,
-      },
       combat: {
         combatants: [
           { id: "p0", name: "Ragna", side: "party" as const, x: 5, y: 5, hp: 30, maxHp: 30, atk: 5, def: 1, memberIndex: 0 },
@@ -52,6 +47,11 @@ describe("xp & leveling", () => {
         ],
         outcome: "won" as const,
         log: [],
+        return: {
+          map: base.currentMap,
+          position: { ...base.party.position },
+          mode: "overworld" as const,
+        },
       },
     };
     const out = resolveCombat(state);

@@ -64,15 +64,16 @@ export function startCombat(
     ...state,
     mode: "combat",
     currentMap: arenaMap(),
-    returnTo: {
-      map: state.currentMap,
-      position: { ...state.party.position },
-      mode: "overworld",
-    },
     combat: {
       combatants,
       activeId: combatants[0]?.id,
       log: [`Ambushed by ${monsters.map((m) => m.name).join(", ")}!`],
+      // Restore to wherever combat was triggered (overworld or a dungeon).
+      return: {
+        map: state.currentMap,
+        position: { ...state.party.position },
+        mode: state.mode,
+      },
     },
   };
 }
@@ -154,7 +155,10 @@ export function combatAct(state: GameState, dir: Direction): GameState {
   }
 
   if (living(combatants, "monster").length === 0) {
-    return { ...state, combat: { combatants, activeId: undefined, log, outcome: "won" } };
+    return {
+      ...state,
+      combat: { combatants, activeId: undefined, log, outcome: "won", return: c.return },
+    };
   }
 
   // Advance to the next living party member; if all acted, monsters take turns.
@@ -162,15 +166,24 @@ export function combatAct(state: GameState, dir: Direction): GameState {
   const idx = order.findIndex((k) => k.id === active.id);
   const next = order.slice(idx + 1).find((k) => k.hp > 0);
   if (next) {
-    return { ...state, combat: { combatants, activeId: next.id, log } };
+    return {
+      ...state,
+      combat: { combatants, activeId: next.id, log, return: c.return },
+    };
   }
 
   monsterTurns(combatants, log);
   if (living(combatants, "party").length === 0) {
-    return { ...state, combat: { combatants, activeId: undefined, log, outcome: "lost" } };
+    return {
+      ...state,
+      combat: { combatants, activeId: undefined, log, outcome: "lost", return: c.return },
+    };
   }
   const first = combatants.find((k) => k.side === "party" && k.hp > 0)!;
-  return { ...state, combat: { combatants, activeId: first.id, log } };
+  return {
+    ...state,
+    combat: { combatants, activeId: first.id, log, return: c.return },
+  };
 }
 
 export function fleeCombat(state: GameState): GameState {
@@ -182,7 +195,7 @@ export function fleeCombat(state: GameState): GameState {
  *  or apply the loss penalty, and restore position. */
 export function resolveCombat(state: GameState): GameState {
   const c = state.combat;
-  const rt = state.returnTo;
+  const rt = c?.return;
   if (!c || !c.outcome || !rt) return state;
 
   let members = state.party.members.map((m, i) => {
@@ -218,7 +231,6 @@ export function resolveCombat(state: GameState): GameState {
     currentMap: rt.map,
     party: { ...state.party, position: { ...rt.position }, gold, members },
     combat: undefined,
-    returnTo: undefined,
     log: log.slice(-8),
   };
 }

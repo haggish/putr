@@ -124,6 +124,9 @@ export interface CombatState {
   activeId?: string;
   log: string[];
   outcome?: "won" | "lost" | "fled";
+  /** Where to restore to when combat ends (its own slot, so a fight can nest
+   *  inside a dungeon interior without clobbering the interior's returnTo). */
+  return?: { map: GameMap; position: Vec2; mode: GameMode };
 }
 
 export interface GameState {
@@ -142,4 +145,6 @@ export interface GameState {
   locationCategory?: string;
   /** Where to restore to when leaving an interior. */
   returnTo?: { map: GameMap; position: Vec2; mode: GameMode };
+  /** Present when the current interior is a night-club dungeon. */
+  dungeon?: { doorAt: Vec2; bossAt: Vec2; cleared: boolean };
 }

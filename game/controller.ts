@@ -7,11 +7,11 @@ import type { EquipSlot, GameState } from "./types";
 import { createInitialState } from "./state";
 import { keyToDirection } from "./input";
 import { step } from "./systems/movement";
-import { enterInterior, exitInterior } from "./systems/interior";
+import { clearDungeon, enterInterior, exitInterior } from "./systems/interior";
 import { buyItem, sellItem, shopCatalogFor } from "./systems/shop";
 import { equip as equipMember, unequip as unequipMember } from "./systems/party";
 import { combatAct, fleeCombat, resolveCombat, startCombat } from "./systems/combat";
-import { rollEncounter } from "./systems/monsters";
+import { clubBoss, clubEncounter, rollEncounter } from "./systems/monsters";
 import { tileAt } from "./world";
 import type { CanvasRenderer } from "./renderer/canvasRenderer";
 import type { VenueInfo } from "./world-asset";
@@ -20,6 +20,7 @@ const ACTION_KEYS = new Set(["Enter", "e", "E", " "]);
 
 export class GameController {
   private state: GameState;
+  private pendingBoss = false;
 
   constructor(
     private readonly renderer: CanvasRenderer,
@@ -48,9 +49,24 @@ export class GameController {
     this.state = result.state;
 
     if (result.moved && this.state.mode === "interior") {
-      // Stepping onto the interior door leads back outside.
-      const t = tileAt(this.state.currentMap, this.state.party.position);
-      if (t?.kind === "venue") this.state = exitInterior(this.state);
+      const d = this.state.dungeon;
+      const pos = this.state.party.position;
+      if (d) {
+        // Night-club dungeon: door exits, boss tile fights the boss, and
+        // wandering triggers exotic encounters.
+        if (pos.x === d.doorAt.x && pos.y === d.doorAt.y) {
+          this.state = exitInterior(this.state);
+        } else if (!d.cleared && pos.x === d.bossAt.x && pos.y === d.bossAt.y) {
+          this.pendingBoss = true;
+          this.state = startCombat(this.state, [clubBoss()]);
+        } else if (Math.random() < 0.14) {
+          this.state = startCombat(this.state, clubEncounter());
+        }
+      } else {
+        // Normal interior: stepping onto the door leads back outside.
+        const t = tileAt(this.state.currentMap, pos);
+        if (t?.kind === "venue") this.state = exitInterior(this.state);
+      }
     } else if (result.moved && this.state.mode === "overworld") {
       // Random encounters on open ground.
       const t = tileAt(this.state.currentMap, this.state.party.position);
@@ -69,16 +85,28 @@ export class GameController {
   /** Combat input: arrows move/attack the active member; F flees. */
   private combatKey(key: string): boolean {
     if (key === "f" || key === "F") {
-      this.state = resolveCombat(fleeCombat(this.state));
+      this.finishCombat(fleeCombat(this.state));
       this.render();
       return true;
     }
     const dir = keyToDirection(key);
     if (!dir) return false;
-    this.state = combatAct(this.state, dir);
-    if (this.state.combat?.outcome) this.state = resolveCombat(this.state);
+    const next = combatAct(this.state, dir);
+    if (next.combat?.outcome) this.finishCombat(next);
+    else this.state = next;
     this.render();
     return true;
+  }
+
+  /** Resolve a finished combat; clears the dungeon if the boss just fell. */
+  private finishCombat(state: GameState): void {
+    const won = state.combat?.outcome === "won";
+    let resolved = resolveCombat(state);
+    if (this.pendingBoss) {
+      this.pendingBoss = false;
+      if (won && resolved.dungeon) resolved = clearDungeon(resolved);
+    }
+    this.state = resolved;
   }
 
   /** Enter a venue you're standing on, or leave the interior you're in. */

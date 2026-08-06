@@ -14,12 +14,16 @@ function withCombat(combatants: Combatant[], activeId: string): GameState {
   return {
     ...base,
     mode: "combat",
-    returnTo: {
-      map: base.currentMap,
-      position: { ...base.party.position },
-      mode: "overworld",
+    combat: {
+      combatants,
+      activeId,
+      log: [],
+      return: {
+        map: base.currentMap,
+        position: { ...base.party.position },
+        mode: "overworld",
+      },
     },
-    combat: { combatants, activeId, log: [] },
   };
 }
 

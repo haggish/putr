@@ -4,7 +4,13 @@
 // tile on the bottom wall) leads back outside. The full night-club dungeon is a
 // separate bead; nightclubs here are just a larger room.
 
-import type { GameMap, GameState, Tile, TileKind } from "../types";
+import type {
+  GameMap,
+  GameState,
+  InventoryItem,
+  Tile,
+  TileKind,
+} from "../types";
 import type { VenueInfo } from "../world-asset";
 
 function hash(s: string): number {
@@ -84,7 +90,75 @@ export function buildInterior(venue: VenueInfo): GameMap {
   return { id: `interior:${venue.id}`, width, height, tiles };
 }
 
+/** A single dark maze level for a night club (Beads 58k.2). Reuses interior
+ *  tiles; walls are "building", floor "plaza", door + boss marker are "venue". */
+export function buildClubDungeon(venue: VenueInfo): {
+  map: GameMap;
+  spawn: { x: number; y: number };
+  doorAt: { x: number; y: number };
+  bossAt: { x: number; y: number };
+} {
+  const width = 15;
+  const height = 13;
+  const tiles: Tile[] = new Array(width * height);
+  const set = (x: number, y: number, kind: TileKind) => {
+    tiles[y * width + x] = { kind };
+  };
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const border = x === 0 || y === 0 || x === width - 1 || y === height - 1;
+      set(x, y, border ? "building" : "plaza");
+    }
+  }
+  const cx = Math.floor(width / 2);
+  const doorAt = { x: cx, y: height - 1 };
+  const bossAt = { x: cx, y: 2 };
+  set(doorAt.x, doorAt.y, "venue"); // exit
+  set(bossAt.x, bossAt.y, "venue"); // boss marker
+
+  // Scatter walls, keeping the central column (spawn -> boss) and the door/boss
+  // rows clear so the level is always traversable.
+  const rnd = hash(venue.id);
+  for (let i = 0; i < 10; i++) {
+    const x = 2 + ((rnd >> (i * 3)) % (width - 4));
+    const y = 3 + ((rnd >> (i * 3 + 1)) % (height - 6));
+    if (x === cx || x <= 0 || y <= 1 || x >= width - 1 || y >= height - 2) continue;
+    set(x, y, "building");
+  }
+
+  return {
+    map: { id: `club:${venue.id}`, width, height, tiles },
+    spawn: { x: cx, y: height - 2 },
+    doorAt,
+    bossAt,
+  };
+}
+
 export function enterInterior(state: GameState, venue: VenueInfo): GameState {
+  const returnTo = {
+    map: state.currentMap,
+    position: { ...state.party.position },
+    mode: state.mode,
+  };
+
+  if (venue.category === "NIGHTCLUB") {
+    const d = buildClubDungeon(venue);
+    return {
+      ...state,
+      mode: "interior",
+      currentMap: d.map,
+      party: { ...state.party, position: { ...d.spawn }, facing: "north" },
+      locationName: venue.name,
+      locationCategory: venue.category,
+      returnTo,
+      dungeon: { doorAt: d.doorAt, bossAt: d.bossAt, cleared: false },
+      log: [
+        ...state.log,
+        `You slip past the door into ${venue.name}. It's dark, and something moves.`,
+      ].slice(-8),
+    };
+  }
+
   const map = buildInterior(venue);
   const cx = Math.floor(map.width / 2);
   return {
@@ -94,12 +168,34 @@ export function enterInterior(state: GameState, venue: VenueInfo): GameState {
     party: { ...state.party, position: { x: cx, y: map.height - 2 }, facing: "north" },
     locationName: venue.name,
     locationCategory: venue.category,
-    returnTo: {
-      map: state.currentMap,
-      position: { ...state.party.position },
-      mode: state.mode,
-    },
+    returnTo,
+    dungeon: undefined,
     log: [...state.log, `You enter ${venue.name}.`].slice(-8),
+  };
+}
+
+/** Boss defeated: mark the dungeon cleared and drop loot. */
+export function clearDungeon(state: GameState): GameState {
+  if (!state.dungeon) return state;
+  const loot: InventoryItem = {
+    name: "Neon Blade",
+    kind: "weapon",
+    value: 120,
+    qty: 1,
+    attack: 12,
+  };
+  const inv = [...state.party.inventory];
+  const i = inv.findIndex((it) => it.name === loot.name);
+  if (i === -1) inv.push(loot);
+  else inv[i] = { ...inv[i], qty: inv[i].qty + 1 };
+  return {
+    ...state,
+    dungeon: { ...state.dungeon, cleared: true },
+    party: { ...state.party, inventory: inv },
+    log: [
+      ...state.log,
+      "You beat the Techno Titan! It drops a Neon Blade.",
+    ].slice(-8),
   };
 }
 
@@ -114,6 +210,7 @@ export function exitInterior(state: GameState): GameState {
     locationName: undefined,
     locationCategory: undefined,
     returnTo: undefined,
+    dungeon: undefined,
     log: [...state.log, "You step back outside."].slice(-8),
   };
 }
