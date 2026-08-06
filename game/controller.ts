@@ -10,6 +10,8 @@ import { step } from "./systems/movement";
 import { enterInterior, exitInterior } from "./systems/interior";
 import { buyItem, sellItem, shopCatalogFor } from "./systems/shop";
 import { equip as equipMember, unequip as unequipMember } from "./systems/party";
+import { combatAct, fleeCombat, resolveCombat, startCombat } from "./systems/combat";
+import { rollEncounter } from "./systems/monsters";
 import { tileAt } from "./world";
 import type { CanvasRenderer } from "./renderer/canvasRenderer";
 import type { VenueInfo } from "./world-asset";
@@ -35,8 +37,9 @@ export class GameController {
     this.renderer.render(this.state);
   }
 
-  /** Handle a raw key; returns true if we consumed it (movement or action). */
+  /** Handle a raw key; returns true if we consumed it. */
   handleKey(key: string): boolean {
+    if (this.state.mode === "combat") return this.combatKey(key);
     if (ACTION_KEYS.has(key)) return this.interact();
 
     const dir = keyToDirection(key);
@@ -44,11 +47,36 @@ export class GameController {
     const result = step(this.state, dir);
     this.state = result.state;
 
-    // Stepping onto the interior door leads back outside.
     if (result.moved && this.state.mode === "interior") {
+      // Stepping onto the interior door leads back outside.
       const t = tileAt(this.state.currentMap, this.state.party.position);
       if (t?.kind === "venue") this.state = exitInterior(this.state);
+    } else if (result.moved && this.state.mode === "overworld") {
+      // Random encounters on open ground.
+      const t = tileAt(this.state.currentMap, this.state.party.position);
+      if (
+        t &&
+        (t.kind === "street" || t.kind === "park") &&
+        Math.random() < 0.1
+      ) {
+        this.state = startCombat(this.state, rollEncounter(t.kind));
+      }
     }
+    this.render();
+    return true;
+  }
+
+  /** Combat input: arrows move/attack the active member; F flees. */
+  private combatKey(key: string): boolean {
+    if (key === "f" || key === "F") {
+      this.state = resolveCombat(fleeCombat(this.state));
+      this.render();
+      return true;
+    }
+    const dir = keyToDirection(key);
+    if (!dir) return false;
+    this.state = combatAct(this.state, dir);
+    if (this.state.combat?.outcome) this.state = resolveCombat(this.state);
     this.render();
     return true;
   }

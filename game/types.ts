@@ -97,12 +97,39 @@ export interface Party {
   members: Character[];
 }
 
+/** A fighter on the battle grid (a party member or a monster). */
+export interface Combatant {
+  id: string;
+  name: string;
+  side: "party" | "monster";
+  x: number;
+  y: number;
+  hp: number;
+  maxHp: number;
+  atk: number;
+  def: number;
+  /** Party combatants reference their roster index (to write HP back). */
+  memberIndex?: number;
+  /** Monster gold reward on defeat. */
+  reward?: number;
+}
+
+export interface CombatState {
+  combatants: Combatant[];
+  /** Id of the party combatant whose turn it is. */
+  activeId?: string;
+  log: string[];
+  outcome?: "won" | "lost" | "fled";
+}
+
 export interface GameState {
   worldId: string;
   mode: GameMode;
   /** The map currently being walked (overworld or an interior sub-map). */
   currentMap: GameMap;
   party: Party;
+  /** Present while mode === "combat". */
+  combat?: CombatState;
   /** Rolling message log rendered in the HUD. */
   log: string[];
   /** Name of the venue currently inside (when mode === "interior"). */

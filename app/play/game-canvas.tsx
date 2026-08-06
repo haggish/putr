@@ -41,6 +41,11 @@ type Hud = {
   shop: ShopItem[];
   inventory: InventoryItem[];
   members: MemberView[];
+  combat?: {
+    activeId?: string;
+    party: { id: string; name: string; hp: number; maxHp: number }[];
+    monsters: { name: string; hp: number; maxHp: number }[];
+  };
   log: string[];
 };
 
@@ -89,6 +94,17 @@ export function GameCanvas() {
         weapon: m.equipment.weapon?.name,
         armor: m.equipment.armor?.name,
       })),
+      combat: s.combat
+        ? {
+            activeId: s.combat.activeId,
+            party: s.combat.combatants
+              .filter((k) => k.side === "party")
+              .map((k) => ({ id: k.id, name: k.name, hp: k.hp, maxHp: k.maxHp })),
+            monsters: s.combat.combatants
+              .filter((k) => k.side === "monster")
+              .map((k) => ({ name: k.name, hp: k.hp, maxHp: k.maxHp })),
+          }
+        : undefined,
       log: s.log,
     });
   }, []);
@@ -166,6 +182,49 @@ export function GameCanvas() {
       />
 
       <aside className="w-full max-w-sm space-y-4 font-mono text-sm">
+        {hud?.combat ? (
+          <div className="rounded-lg border border-red-300 bg-red-50 p-3">
+            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-red-700">
+              Combat
+            </div>
+            <div className="mb-1 text-xs font-semibold text-neutral-500">
+              Enemies
+            </div>
+            <ul className="mb-2 space-y-1 text-neutral-700">
+              {hud.combat.monsters.map((m, i) => (
+                <li
+                  key={i}
+                  className={m.hp <= 0 ? "text-neutral-400 line-through" : ""}
+                >
+                  {m.name} — {Math.max(0, m.hp)}/{m.maxHp}
+                </li>
+              ))}
+            </ul>
+            <div className="mb-1 text-xs font-semibold text-neutral-500">
+              Your party
+            </div>
+            <ul className="space-y-1 text-neutral-700">
+              {hud.combat.party.map((p) => (
+                <li
+                  key={p.id}
+                  className={`${p.hp <= 0 ? "text-neutral-400 line-through" : ""} ${
+                    p.id === hud.combat!.activeId
+                      ? "font-semibold text-amber-700"
+                      : ""
+                  }`}
+                >
+                  {p.id === hud.combat!.activeId ? "▸ " : ""}
+                  {p.name} — {Math.max(0, p.hp)}/{p.maxHp}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2 text-xs text-neutral-500">
+              Arrows: move / attack adjacent · F: flee
+            </p>
+          </div>
+        ) : null}
+
+        {!hud?.combat && (
         <div className="rounded-lg border border-neutral-200 bg-white p-3">
           <div className="mb-2 flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
@@ -254,6 +313,7 @@ export function GameCanvas() {
             <p className="text-neutral-500">Loading…</p>
           )}
         </div>
+        )}
 
         {inShop && hud ? (
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
@@ -285,7 +345,7 @@ export function GameCanvas() {
           </div>
         ) : null}
 
-        {hud && hud.inventory.length > 0 ? (
+        {hud && !hud.combat && hud.inventory.length > 0 ? (
           <div className="rounded-lg border border-neutral-200 bg-white p-3">
             <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
               Pack{" "}

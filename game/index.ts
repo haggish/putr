@@ -9,6 +9,8 @@ export * from "./systems/movement";
 export * from "./systems/interior";
 export * from "./systems/shop";
 export * from "./systems/party";
+export * from "./systems/monsters";
+export * from "./systems/combat";
 export { CanvasRenderer, TILE_COLORS } from "./renderer/canvasRenderer";
 export type { RendererOptions } from "./renderer/canvasRenderer";
 export { GameController } from "./controller";

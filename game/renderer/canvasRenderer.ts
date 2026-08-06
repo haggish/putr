@@ -39,6 +39,7 @@ export class CanvasRenderer {
   }
 
   render(state: GameState): void {
+    if (state.combat) return this.renderCombat(state);
     const { currentMap: map, party } = state;
     const ts = this.tileSize;
     const half = Math.floor(this.viewTiles / 2);
@@ -69,5 +70,39 @@ export class CanvasRenderer {
       ts * 0.6,
       ts * 0.6,
     );
+  }
+
+  /** Render the battle arena (an 11x11 map) with every combatant. */
+  private renderCombat(state: GameState): void {
+    const map = state.currentMap;
+    const combat = state.combat;
+    const ts = this.tileSize;
+
+    this.ctx.fillStyle = "#000";
+    this.ctx.fillRect(0, 0, this.pixelSize, this.pixelSize);
+    for (let y = 0; y < map.height; y++) {
+      for (let x = 0; x < map.width; x++) {
+        const t = map.tiles[y * map.width + x];
+        if (!t) continue;
+        this.ctx.fillStyle = TILE_COLORS[t.kind];
+        this.ctx.fillRect(x * ts, y * ts, ts, ts);
+      }
+    }
+    if (!combat) return;
+    for (const c of combat.combatants) {
+      if (c.hp <= 0) continue;
+      this.ctx.fillStyle = c.side === "party" ? "#dfe6ee" : "#c0392b";
+      this.ctx.fillRect(
+        c.x * ts + ts * 0.15,
+        c.y * ts + ts * 0.15,
+        ts * 0.7,
+        ts * 0.7,
+      );
+      if (c.id === combat.activeId) {
+        this.ctx.strokeStyle = "#f1c40f";
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeRect(c.x * ts + 2, c.y * ts + 2, ts - 4, ts - 4);
+      }
+    }
   }
 }
