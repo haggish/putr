@@ -10,6 +10,7 @@ import {
   stateFromAsset,
   TILE_COLORS,
   venueMap,
+  type Direction,
   type GameState,
   type InventoryItem,
   type ShopItem,
@@ -17,6 +18,7 @@ import {
   type VenueInfo,
   type WorldAsset,
 } from "@/game";
+import { loadParty, saveParty } from "./actions";
 
 type MemberView = {
   name: string;
@@ -66,6 +68,7 @@ export function GameCanvas() {
   const venuesRef = useRef<Map<string, VenueInfo>>(new Map());
   const [hud, setHud] = useState<Hud | null>(null);
   const [selected, setSelected] = useState(0);
+  const [saved, setSaved] = useState(false);
 
   const refresh = useCallback(() => {
     const c = controllerRef.current;
@@ -141,9 +144,19 @@ export function GameCanvas() {
 
     fetch("/world/berlin-overworld.json")
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error("no asset"))))
-      .then((asset: WorldAsset) => {
+      .then(async (asset: WorldAsset) => {
         venuesRef.current = venueMap(asset);
-        attach(stateFromAsset(asset));
+        const base = stateFromAsset(asset);
+        const loaded = await loadParty();
+        if (loaded) {
+          base.party.position = { x: loaded.x, y: loaded.y };
+          base.party.facing = loaded.facing as Direction;
+          base.party.gold = loaded.gold;
+          if (loaded.members.length) base.party.members = loaded.members;
+          base.party.inventory = loaded.inventory;
+          base.log = [...base.log, "Loaded your saved game."];
+        }
+        attach(base);
       })
       .catch(() => attach());
 
@@ -168,6 +181,23 @@ export function GameCanvas() {
   const doUnequip = (member: number, slot: "weapon" | "armor") => {
     controllerRef.current?.unequip(member, slot);
     refresh();
+  };
+  const save = async () => {
+    const c = controllerRef.current;
+    if (!c) return;
+    const p = c.getState().party;
+    const r = await saveParty({
+      x: p.position.x,
+      y: p.position.y,
+      facing: p.facing,
+      gold: p.gold,
+      members: p.members,
+      inventory: p.inventory,
+    });
+    if (r.ok) {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    }
   };
 
   const inShop = !!hud?.locationName && (hud?.shop.length ?? 0) > 0;
@@ -230,7 +260,19 @@ export function GameCanvas() {
             <span className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
               Party
             </span>
-            <span className="text-xs text-amber-700">{hud?.gold ?? 0}g</span>
+            <span className="flex items-center gap-2">
+              {saved ? (
+                <span className="text-xs text-green-600">Saved!</span>
+              ) : null}
+              <button
+                type="button"
+                onClick={save}
+                className="rounded border border-neutral-300 px-2 py-0.5 text-xs hover:bg-neutral-100"
+              >
+                Save
+              </button>
+              <span className="text-xs text-amber-700">{hud?.gold ?? 0}g</span>
+            </span>
           </div>
           {hud ? (
             <>
