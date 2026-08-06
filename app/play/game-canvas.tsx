@@ -6,6 +6,7 @@ import {
   GameController,
   characterAttack,
   characterDefense,
+  npcPersona,
   shopCatalogFor,
   stateFromAsset,
   TILE_COLORS,
@@ -20,6 +21,7 @@ import {
   type WorldAsset,
 } from "@/game";
 import { loadParty, saveParty } from "./actions";
+import { npcReply, type NpcTurn } from "./npc-actions";
 
 type MemberView = {
   name: string;
@@ -72,6 +74,11 @@ export function GameCanvas() {
   const [hud, setHud] = useState<Hud | null>(null);
   const [selected, setSelected] = useState(0);
   const [saved, setSaved] = useState(false);
+  const [talking, setTalking] = useState(false);
+  const [keeper, setKeeper] = useState("");
+  const [npcLog, setNpcLog] = useState<NpcTurn[]>([]);
+  const [npcInput, setNpcInput] = useState("");
+  const [npcBusy, setNpcBusy] = useState(false);
 
   const refresh = useCallback(() => {
     const c = controllerRef.current;
@@ -138,8 +145,10 @@ export function GameCanvas() {
     };
 
     const onKey = (e: KeyboardEvent) => {
-      const isButton = (e.target as HTMLElement)?.tagName === "BUTTON";
-      if (isButton && ["Enter", " ", "e", "E"].includes(e.key)) return;
+      const tag = (e.target as HTMLElement)?.tagName;
+      // Let text inputs (the NPC chat) receive keys without moving the party.
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      if (tag === "BUTTON" && ["Enter", " ", "e", "E"].includes(e.key)) return;
       if (controllerRef.current?.handleKey(e.key)) {
         e.preventDefault();
         refresh();
@@ -210,6 +219,40 @@ export function GameCanvas() {
       setTimeout(() => setSaved(false), 2000);
     }
   };
+  const openTalk = () => {
+    const s = controllerRef.current?.getState();
+    if (!s?.locationName) return;
+    const { keeperName } = npcPersona({
+      category: s.locationCategory ?? "OTHER",
+      venueName: s.locationName,
+    });
+    setKeeper(keeperName);
+    setNpcLog([]);
+    setNpcInput("");
+    setTalking(true);
+  };
+  const sendNpc = async () => {
+    const text = npcInput.trim();
+    if (!text || npcBusy) return;
+    const s = controllerRef.current?.getState();
+    const history = npcLog;
+    setNpcLog([...history, { role: "user", content: text }]);
+    setNpcInput("");
+    setNpcBusy(true);
+    const { reply } = await npcReply({
+      category: s?.locationCategory ?? "OTHER",
+      venueName: s?.locationName ?? "this place",
+      history,
+      message: text,
+    });
+    setNpcLog((l) => [...l, { role: "assistant", content: reply }]);
+    setNpcBusy(false);
+  };
+
+  // Close the conversation when you leave the venue.
+  useEffect(() => {
+    if (!hud?.locationName && talking) setTalking(false);
+  }, [hud?.locationName, talking]);
 
   const inShop = !!hud?.locationName && (hud?.shop.length ?? 0) > 0;
 
@@ -398,6 +441,71 @@ export function GameCanvas() {
                 </li>
               ))}
             </ul>
+          </div>
+        ) : null}
+
+        {hud?.locationName && !hud.combat && !talking ? (
+          <div className="rounded-lg border border-neutral-200 bg-white p-3">
+            <button
+              type="button"
+              onClick={openTalk}
+              className="w-full rounded border border-neutral-300 px-2 py-1 text-xs hover:bg-neutral-100"
+            >
+              Talk to the keeper
+            </button>
+          </div>
+        ) : null}
+
+        {talking && hud?.locationName ? (
+          <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
+                Talking to {keeper}
+              </span>
+              <button
+                type="button"
+                onClick={() => setTalking(false)}
+                className="rounded border border-neutral-300 px-2 py-0.5 text-xs hover:bg-neutral-100"
+              >
+                Leave
+              </button>
+            </div>
+            <ul className="mb-2 max-h-40 space-y-1 overflow-y-auto text-neutral-700">
+              {npcLog.map((m, i) => (
+                <li
+                  key={i}
+                  className={
+                    m.role === "user" ? "text-neutral-500" : "text-indigo-800"
+                  }
+                >
+                  {m.role === "user" ? "You: " : `${keeper}: `}
+                  {m.content}
+                </li>
+              ))}
+              {npcBusy ? (
+                <li className="text-neutral-400">{keeper} is thinking…</li>
+              ) : null}
+            </ul>
+            <div className="flex gap-1">
+              <input
+                value={npcInput}
+                onChange={(e) => setNpcInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") sendNpc();
+                }}
+                placeholder="Say something…"
+                maxLength={200}
+                className="flex-1 rounded border border-neutral-300 px-2 py-1 text-xs"
+              />
+              <button
+                type="button"
+                onClick={sendNpc}
+                disabled={npcBusy}
+                className="rounded border border-neutral-300 px-2 py-0.5 text-xs hover:bg-neutral-100 disabled:opacity-40"
+              >
+                Send
+              </button>
+            </div>
           </div>
         ) : null}
 

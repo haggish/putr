@@ -11,6 +11,7 @@ export * from "./systems/shop";
 export * from "./systems/party";
 export * from "./systems/monsters";
 export * from "./systems/combat";
+export * from "./systems/npc";
 export { CanvasRenderer, TILE_COLORS } from "./renderer/canvasRenderer";
 export type { RendererOptions } from "./renderer/canvasRenderer";
 export { TILE_PATTERNS, SPRITES } from "./renderer/tiles";
