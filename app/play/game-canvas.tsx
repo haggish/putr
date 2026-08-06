@@ -154,12 +154,18 @@ export function GameCanvas() {
         const base = stateFromAsset(asset);
         const loaded = await loadParty();
         if (loaded) {
-          base.party.position = { x: loaded.x, y: loaded.y };
-          base.party.facing = loaded.facing as Direction;
           base.party.gold = loaded.gold;
           if (loaded.members.length) base.party.members = loaded.members;
           base.party.inventory = loaded.inventory;
-          base.log = [...base.log, "Loaded your saved game."];
+          if (loaded.x >= 0) {
+            // Resume an existing save at its saved position.
+            base.party.position = { x: loaded.x, y: loaded.y };
+            base.party.facing = loaded.facing as Direction;
+            base.log = [...base.log, "Loaded your saved game."];
+          } else {
+            // A freshly created party — keep the world spawn.
+            base.log = [...base.log, "Your new party sets out into Berlin."];
+          }
         }
         attach(base);
       })

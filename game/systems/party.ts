@@ -8,7 +8,52 @@ import type {
   EquipSlot,
   GameState,
   InventoryItem,
+  Race,
 } from "../types";
+
+export const RACES: Race[] = ["HUMAN", "ELF", "DWARF", "HALFLING", "GNOME"];
+export const CLASSES: CharacterClass[] = [
+  "FIGHTER",
+  "CLERIC",
+  "WIZARD",
+  "THIEF",
+  "PALADIN",
+  "RANGER",
+  "BARBARIAN",
+  "DRUID",
+];
+
+const CLASS_HP: Record<CharacterClass, number> = {
+  FIGHTER: 30,
+  BARBARIAN: 32,
+  PALADIN: 28,
+  RANGER: 24,
+  THIEF: 22,
+  CLERIC: 24,
+  DRUID: 24,
+  WIZARD: 18,
+};
+
+/** Build a fresh level-1 character; max HP comes from the class. */
+export function makeCharacter(input: {
+  name: string;
+  race: Race;
+  class: CharacterClass;
+  stats: { str: number; dex: number; int: number; wis: number };
+}): Character {
+  const maxHp = CLASS_HP[input.class];
+  return {
+    name: input.name.trim() || "Adventurer",
+    race: input.race,
+    class: input.class,
+    level: 1,
+    xp: 0,
+    hp: maxHp,
+    maxHp,
+    stats: { ...input.stats },
+    equipment: {},
+  };
+}
 
 /** The default starting party (four classic archetypes). */
 export function createDefaultParty(): Character[] {
