@@ -18,3 +18,77 @@ body {
 body {
   @apply bg-neutral-50 text-neutral-900 antialiased;
 }
+
+/* ── Penultimate I — the /play "Amiga" HUD theme (Bead q7z.3) ──────────
+   Original styling benchmarked to the Amiga look: a dark CRT console with
+   beveled panels, a gold frame, and a monospace face. Scoped to .game-screen
+   so it never touches the rest of the app; reskins the utility classes the
+   /play HUD already uses. */
+.game-screen {
+  background: #0b1019;
+  color: #cfc6ab;
+  padding: 0.85rem;
+  border: 3px solid #05080d;
+  border-radius: 3px;
+  box-shadow:
+    inset 2px 2px 0 #33445a,
+    inset -3px -3px 0 #05080d,
+    0 0 0 2px #d8b64a;
+  font-family: ui-monospace, "DejaVu Sans Mono", Menlo, monospace;
+}
+.game-screen .rounded-lg {
+  border-radius: 2px;
+  box-shadow: inset 1px 1px 0 #33445a, inset -2px -2px 0 #05080d;
+}
+.game-screen .bg-white,
+.game-screen .bg-amber-50,
+.game-screen .bg-red-50,
+.game-screen .bg-indigo-50,
+.game-screen .bg-blue-50 {
+  background-color: #16202c !important;
+}
+.game-screen [class*="border-neutral-2"],
+.game-screen [class*="border-neutral-3"],
+.game-screen [class*="border-neutral-8"],
+.game-screen [class*="border-amber-2"],
+.game-screen [class*="border-red-3"],
+.game-screen [class*="border-indigo-2"],
+.game-screen [class*="border-blue-2"] {
+  border-color: #05080d !important;
+}
+.game-screen .border-amber-400 {
+  border-color: #e6c86a !important;
+}
+.game-screen .text-neutral-700 { color: #d6cdb0 !important; }
+.game-screen .text-neutral-600 { color: #bdb497 !important; }
+.game-screen .text-neutral-500 { color: #8fa0b6 !important; }
+.game-screen .text-neutral-400 { color: #6f8098 !important; }
+.game-screen .text-amber-700,
+.game-screen .text-amber-800 { color: #e6c86a !important; }
+.game-screen .text-red-700 { color: #e0705e !important; }
+.game-screen .text-indigo-700,
+.game-screen .text-indigo-800 { color: #93a6ff !important; }
+.game-screen .text-blue-700 { color: #6aa8ff !important; }
+.game-screen .text-green-600 { color: #6fdc7a !important; }
+.game-screen button.rounded,
+.game-screen button.rounded-lg {
+  background-color: #26323f;
+  color: #e8e0c8;
+  border: 2px solid #05080d;
+  border-radius: 2px;
+  box-shadow: inset 1px 1px 0 #3a4a5e, inset -1px -1px 0 #05080d;
+}
+.game-screen button:hover:not(:disabled) {
+  background-color: #30414f !important;
+}
+.game-screen button:disabled {
+  opacity: 0.4;
+}
+.game-screen input {
+  background-color: #0b1019 !important;
+  color: #e8e0c8 !important;
+  border-color: #05080d !important;
+  border-radius: 2px;
+}
+.game-screen .bg-green-600 { background-color: #46b155 !important; }
+.game-screen .bg-neutral-200 { background-color: #05080d !important; }

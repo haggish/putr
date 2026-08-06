@@ -274,7 +274,7 @@ export function GameCanvas() {
   const inShop = !!hud?.locationName && (hud?.shop.length ?? 0) > 0;
 
   return (
-    <div className="flex flex-col gap-4 lg:flex-row">
+    <div className="game-screen flex flex-col gap-4 lg:flex-row">
       <canvas
         ref={canvasRef}
         className="rounded-lg border border-neutral-800 bg-black"
