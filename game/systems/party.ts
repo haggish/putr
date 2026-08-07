@@ -119,6 +119,22 @@ export function characterDefense(c: Character): number {
   );
 }
 
+const CLASS_SPRITE: Record<CharacterClass, string> = {
+  FIGHTER: "fighter",
+  CLERIC: "cleric",
+  WIZARD: "wizard",
+  THIEF: "rogue",
+  PALADIN: "paladin",
+  RANGER: "ranger",
+  BARBARIAN: "barbarian",
+  DRUID: "druid",
+};
+
+/** Sprite key for a character's class (see SPRITES); "hero" as a fallback. */
+export function heroSprite(c: Character): string {
+  return CLASS_SPRITE[c.class] ?? "hero";
+}
+
 function kindToSlot(kind: string): EquipSlot | null {
   if (kind === "weapon" || kind === "armor" || kind === "shield") return kind;
   return null;

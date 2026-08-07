@@ -5,7 +5,7 @@
 
 import type { Combatant, Direction, GameMap, GameState, Tile } from "../types";
 import { DIRECTIONS } from "../types";
-import { characterAttack, characterDefense, grantXp } from "./party";
+import { characterAttack, characterDefense, grantXp, heroSprite } from "./party";
 import type { MonsterTemplate } from "./monsters";
 
 const ARENA = 11;
@@ -43,6 +43,7 @@ export function startCombat(
       atk: characterAttack(m),
       def: characterDefense(m),
       memberIndex: i,
+      sprite: heroSprite(m),
     });
   });
   monsters.forEach((mo, i) => {
