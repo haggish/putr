@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   CanvasRenderer,
+  COMBAT_ANIM,
   GameController,
   characterAttack,
   characterDefense,
@@ -77,6 +78,14 @@ export function GameCanvas() {
   const controllerRef = useRef<GameController | null>(null);
   const venuesRef = useRef<Map<string, VenueInfo>>(new Map());
   const stationByXYRef = useRef<Map<string, Station>>(new Map());
+  const rendererRef = useRef<CanvasRenderer | null>(null);
+  const animRef = useRef({
+    prev: new Map<string, number>(),
+    hits: new Map<string, number>(),
+    deaths: new Map<string, number>(),
+    victory: null as null | { at: number; side: "party" | "monster" },
+    raf: 0,
+  });
   const [hud, setHud] = useState<Hud | null>(null);
   const [selected, setSelected] = useState(0);
   const [saved, setSaved] = useState(false);
@@ -142,10 +151,12 @@ export function GameCanvas() {
     if (!ctx) return;
 
     const renderer = new CanvasRenderer(ctx, { tileSize: 32, viewTiles: 11 });
+    rendererRef.current = renderer;
     canvas.width = renderer.pixelSize;
     canvas.height = renderer.pixelSize;
 
     let disposed = false;
+    const anim = animRef.current;
 
     const attach = (initial?: GameState) => {
       if (disposed) return;
@@ -155,13 +166,90 @@ export function GameCanvas() {
       refresh();
     };
 
+    // Record hits/deaths/victory by diffing combatant HP against the last frame.
+    const diffCombat = () => {
+      const combat = controllerRef.current?.getState().combat;
+      if (!combat) return;
+      const now = performance.now();
+      for (const c of combat.combatants) {
+        const prevHp = anim.prev.get(c.id);
+        if (prevHp !== undefined && c.hp < prevHp) {
+          if (c.hp <= 0 && prevHp > 0) anim.deaths.set(c.id, now);
+          else anim.hits.set(c.id, now);
+        }
+        anim.prev.set(c.id, c.hp);
+      }
+      if (combat.outcome && !anim.victory) {
+        anim.victory = {
+          at: now,
+          side: combat.outcome === "won" ? "party" : "monster",
+        };
+      }
+    };
+
+    const resetAnim = () => {
+      anim.prev.clear();
+      anim.hits.clear();
+      anim.deaths.clear();
+      anim.victory = null;
+    };
+
+    // Drives combat effects each frame; idles (no rAF) whenever nothing animates.
+    const loop = () => {
+      const controller = controllerRef.current;
+      const r = rendererRef.current;
+      if (!controller || !r) {
+        anim.raf = 0;
+        return;
+      }
+      const now = performance.now();
+      for (const [id, t] of anim.hits)
+        if (now - t > COMBAT_ANIM.hit) anim.hits.delete(id);
+      for (const [id, t] of anim.deaths)
+        if (now - t > COMBAT_ANIM.death) anim.deaths.delete(id);
+
+      r.render(controller.getState(), {
+        now,
+        hits: anim.hits,
+        deaths: anim.deaths,
+        victory: anim.victory ?? undefined,
+      });
+
+      // Once the victory dance has played out, actually resolve the combat.
+      if (anim.victory && now - anim.victory.at > COMBAT_ANIM.victory) {
+        resetAnim();
+        controller.finalizeCombat();
+        refresh();
+      }
+
+      const busy = anim.hits.size || anim.deaths.size || anim.victory;
+      if (controllerRef.current?.getState().mode === "combat" || busy) {
+        anim.raf = requestAnimationFrame(loop);
+      } else {
+        anim.raf = 0;
+      }
+    };
+
+    const ensureLoop = () => {
+      if (!anim.raf) anim.raf = requestAnimationFrame(loop);
+    };
+
     const onKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
       // Let text inputs (the NPC chat) receive keys without moving the party.
       if (tag === "INPUT" || tag === "TEXTAREA") return;
       if (tag === "BUTTON" && ["Enter", " ", "e", "E"].includes(e.key)) return;
-      if (controllerRef.current?.handleKey(e.key)) {
+      const controller = controllerRef.current;
+      if (!controller) return;
+      const wasCombat = controller.getState().mode === "combat";
+      if (controller.handleKey(e.key)) {
         e.preventDefault();
+        if (controller.getState().mode === "combat") {
+          diffCombat();
+          ensureLoop();
+        } else if (wasCombat) {
+          resetAnim(); // left combat by fleeing
+        }
         refresh();
       }
     };
@@ -196,6 +284,8 @@ export function GameCanvas() {
     return () => {
       disposed = true;
       window.removeEventListener("keydown", onKey);
+      if (anim.raf) cancelAnimationFrame(anim.raf);
+      anim.raf = 0;
     };
   }, [refresh]);
 

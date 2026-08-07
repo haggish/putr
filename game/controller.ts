@@ -85,28 +85,33 @@ export class GameController {
   /** Combat input: arrows move/attack the active member; F flees. */
   private combatKey(key: string): boolean {
     if (key === "f" || key === "F") {
-      this.finishCombat(fleeCombat(this.state));
+      // Flee resolves immediately (no victory animation).
+      this.pendingBoss = false;
+      this.state = resolveCombat(fleeCombat(this.state));
       this.render();
       return true;
     }
     const dir = keyToDirection(key);
     if (!dir) return false;
-    const next = combatAct(this.state, dir);
-    if (next.combat?.outcome) this.finishCombat(next);
-    else this.state = next;
+    // Apply the action but DON'T resolve on a win/loss — the client plays the
+    // outcome animation, then calls finalizeCombat().
+    this.state = combatAct(this.state, dir);
     this.render();
     return true;
   }
 
-  /** Resolve a finished combat; clears the dungeon if the boss just fell. */
-  private finishCombat(state: GameState): void {
-    const won = state.combat?.outcome === "won";
-    let resolved = resolveCombat(state);
+  /** Finish a decided combat (called after the outcome animation). Clears the
+   *  dungeon if the boss just fell. */
+  finalizeCombat(): void {
+    if (!this.state.combat?.outcome) return;
+    const won = this.state.combat.outcome === "won";
+    let resolved = resolveCombat(this.state);
     if (this.pendingBoss) {
       this.pendingBoss = false;
       if (won && resolved.dungeon) resolved = clearDungeon(resolved);
     }
     this.state = resolved;
+    this.render();
   }
 
   /** Enter a venue you're standing on, or leave the interior you're in. */

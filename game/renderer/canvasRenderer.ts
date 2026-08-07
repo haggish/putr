@@ -9,6 +9,7 @@ import {
   TILE_PATTERNS,
   type TilePattern,
 } from "./tiles";
+import { heroSprite } from "../systems/party";
 
 export const TILE_COLORS: Record<TileKind, string> = {
   water: "#2a4d69",
@@ -26,6 +27,20 @@ export interface RendererOptions {
   tileSize?: number;
   /** Visible tiles across; odd keeps the party centered. */
   viewTiles?: number;
+}
+
+/** Animation durations (ms). Shared with the client that drives the timing. */
+export const COMBAT_ANIM = { hit: 200, death: 420, victory: 1100 };
+
+/** Transient combat effects, supplied per frame by the browser render loop. */
+export interface CombatFx {
+  now: number;
+  /** combatant id -> timestamp it was hit. */
+  hits: Map<string, number>;
+  /** combatant id -> timestamp it started dying. */
+  deaths: Map<string, number>;
+  /** Winning side's victory bob, if combat is over. */
+  victory?: { at: number; side: "party" | "monster" };
 }
 
 export class CanvasRenderer {
@@ -76,8 +91,8 @@ export class CanvasRenderer {
     return this.viewTiles * this.tileSize;
   }
 
-  render(state: GameState): void {
-    if (state.combat) return this.renderCombat(state);
+  render(state: GameState, fx?: CombatFx): void {
+    if (state.combat) return this.renderCombat(state, fx);
     const { currentMap: map, party } = state;
     const ts = this.tileSize;
     const half = Math.floor(this.viewTiles / 2);
@@ -99,8 +114,11 @@ export class CanvasRenderer {
       }
     }
 
-    // Party is always centered.
-    const hero = this.sprites.hero;
+    // Party is always centered — drawn as the leader's class.
+    const leader = state.party.members[0];
+    const hero =
+      (leader ? this.sprites[heroSprite(leader)] : undefined) ??
+      this.sprites.hero;
     if (hero) {
       this.ctx.drawImage(hero, half * ts, half * ts);
     } else {
@@ -115,39 +133,71 @@ export class CanvasRenderer {
   }
 
   /** Render the battle arena (an 11x11 map) with every combatant. */
-  private renderCombat(state: GameState): void {
+  private renderCombat(state: GameState, fx?: CombatFx): void {
     const map = state.currentMap;
     const combat = state.combat;
     const ts = this.tileSize;
+    const now = fx?.now ?? 0;
 
     this.ctx.fillStyle = "#000";
     this.ctx.fillRect(0, 0, this.pixelSize, this.pixelSize);
     for (let y = 0; y < map.height; y++) {
       for (let x = 0; x < map.width; x++) {
         const t = map.tiles[y * map.width + x];
-        if (!t) continue;
-        this.drawTile(t.kind, x * ts, y * ts);
+        if (t) this.drawTile(t.kind, x * ts, y * ts);
       }
     }
     if (!combat) return;
+
     for (const c of combat.combatants) {
-      if (c.hp <= 0) continue;
+      let alpha = 1;
+      let dx = 0;
+      let dy = 0;
+      let flash = 0;
+
+      if (c.hp <= 0) {
+        const dyingAt = fx?.deaths.get(c.id);
+        if (dyingAt === undefined) continue; // already gone
+        const p = (now - dyingAt) / COMBAT_ANIM.death;
+        if (p >= 1) continue;
+        alpha = 1 - p;
+        dy = -Math.round(p * ts * 0.5); // fade and rise
+      } else {
+        const hitAt = fx?.hits.get(c.id);
+        if (hitAt !== undefined) {
+          const p = (now - hitAt) / COMBAT_ANIM.hit;
+          if (p < 1) {
+            flash = 1 - p;
+            dx = Math.round(Math.sin(p * Math.PI * 4) * 3); // shake
+          }
+        }
+        if (fx?.victory && c.side === fx.victory.side) {
+          dy = -Math.abs(Math.round(Math.sin((now - fx.victory.at) / 150) * 3));
+        }
+      }
+
       const spr =
         c.side === "party"
-          ? this.sprites.hero
+          ? (this.sprites[c.sprite ?? "hero"] ?? this.sprites.hero)
           : (this.sprites[c.sprite ?? "foe"] ?? this.sprites.foe);
+      const px = c.x * ts + dx;
+      const py = c.y * ts + dy;
+
+      this.ctx.globalAlpha = alpha;
       if (spr) {
-        this.ctx.drawImage(spr, c.x * ts, c.y * ts);
+        this.ctx.drawImage(spr, px, py);
       } else {
         this.ctx.fillStyle = c.side === "party" ? "#dfe6ee" : "#c0392b";
-        this.ctx.fillRect(
-          c.x * ts + ts * 0.15,
-          c.y * ts + ts * 0.15,
-          ts * 0.7,
-          ts * 0.7,
-        );
+        this.ctx.fillRect(px + ts * 0.15, py + ts * 0.15, ts * 0.7, ts * 0.7);
       }
-      if (c.id === combat.activeId) {
+      this.ctx.globalAlpha = 1;
+
+      if (flash > 0) {
+        this.ctx.fillStyle = `rgba(255,255,255,${(0.7 * flash).toFixed(3)})`;
+        this.ctx.fillRect(px, py, ts, ts);
+      }
+
+      if (c.hp > 0 && c.id === combat.activeId && !fx?.victory) {
         this.ctx.strokeStyle = "#f1c40f";
         this.ctx.lineWidth = 2;
         this.ctx.strokeRect(c.x * ts + 2, c.y * ts + 2, ts - 4, ts - 4);
