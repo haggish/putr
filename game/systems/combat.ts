@@ -58,6 +58,7 @@ export function startCombat(
       def: mo.def,
       reward: mo.reward,
       xpReward: mo.xp,
+      sprite: mo.sprite,
     });
   });
   return {

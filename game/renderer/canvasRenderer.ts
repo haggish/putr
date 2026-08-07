@@ -32,8 +32,7 @@ export class CanvasRenderer {
   private readonly tileSize: number;
   private readonly viewTiles: number;
   private readonly atlas: Partial<Record<TileKind, HTMLCanvasElement>> = {};
-  private readonly sprites: Partial<Record<"hero" | "foe", HTMLCanvasElement>> =
-    {};
+  private readonly sprites: Partial<Record<string, HTMLCanvasElement>> = {};
 
   constructor(
     private readonly ctx: CanvasRenderingContext2D,
@@ -58,8 +57,9 @@ export class CanvasRenderer {
     (Object.keys(TILE_PATTERNS) as TileKind[]).forEach((k) => {
       this.atlas[k] = bake(TILE_PATTERNS[k]);
     });
-    this.sprites.hero = bake(SPRITES.hero);
-    this.sprites.foe = bake(SPRITES.foe);
+    for (const key of Object.keys(SPRITES)) {
+      this.sprites[key] = bake(SPRITES[key]);
+    }
   }
 
   private drawTile(kind: TileKind, px: number, py: number): void {
@@ -132,7 +132,10 @@ export class CanvasRenderer {
     if (!combat) return;
     for (const c of combat.combatants) {
       if (c.hp <= 0) continue;
-      const spr = c.side === "party" ? this.sprites.hero : this.sprites.foe;
+      const spr =
+        c.side === "party"
+          ? this.sprites.hero
+          : (this.sprites[c.sprite ?? "foe"] ?? this.sprites.foe);
       if (spr) {
         this.ctx.drawImage(spr, c.x * ts, c.y * ts);
       } else {

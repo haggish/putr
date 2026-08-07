@@ -116,6 +116,8 @@ export interface Combatant {
   reward?: number;
   /** Monster XP reward on defeat. */
   xpReward?: number;
+  /** Sprite key for rendering (monsters); falls back to "foe". */
+  sprite?: string;
 }
 
 export interface CombatState {

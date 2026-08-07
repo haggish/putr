@@ -17,6 +17,13 @@ const TILE_PATTERNS = {
 const SPRITES = {
   hero: { palette: { ".": null, h: "#5a3a20", s: "#e8c9a0", b: "#3a6ea5", B: "#2a4a70" }, rows: ["..hhhh..", "..hssh..", "..ssss..", "..bBBb..", ".bbBBbb.", "..bBBb..", "..b..b..", "..s..s.."] },
   foe: { palette: { ".": null, R: "#c0392b", e: "#f1c40f" }, rows: ["..RRRR..", ".RRRRRR.", "RRRRRRRR", "ReRRRReR", "RRRRRRRR", "RRRRRRRR", ".RRRRRR.", "..R..R.."] },
+  addict: { palette: { ".": null, h: "#4a4a4a", s: "#c9b8a0", r: "#6a5a4a" }, rows: ["..hh....", ".hssh...", ".hssh...", "..rr....", ".rrrr...", ".r.rr...", ".r..r...", ".s..s..."] },
+  thief: { palette: { ".": null, d: "#2a2a35", e: "#e8d84a", b: "#9aa0aa", h: "#c9b8a0" }, rows: ["..dddd..", ".ddddd..", ".deede..", ".ddddd..", ".dddd.b.", ".dddd.b.", ".ddddh..", ".dd.dd.."] },
+  boar: { palette: { ".": null, B: "#3a2414", b: "#5a3a22", t: "#e8e0c8", e: "#c0392b" }, rows: ["........", "..BBBB..", ".BbbbbB.", "tBbebbB.", "tbbbbbb.", ".b.bb.b.", ".b.bb.b.", "........"] },
+  wraith: { palette: { ".": null, c: "#2ad6d6", C: "#1a9a9a", e: "#ffffff" }, rows: ["..cccc..", ".cccccc.", ".ceccec.", ".cccccc.", ".cccccc.", ".cCcCcC.", ".c.c.c..", "..C.C..."] },
+  troll: { palette: { ".": null, G: "#3a5a2a", g: "#5a7a4a", e: "#e8d84a", t: "#e8e0c8" }, rows: [".GGGGG..", ".GeGeG..", ".GGGGG..", ".GtttG..", "GGGGGGG.", "GGgggGG.", ".Gg.gG..", ".g...g.."] },
+  specter: { palette: { ".": null, p: "#8a4ad6", P: "#5a2a9a", e: "#e84ad6" }, rows: ["..pppp..", ".pPppPp.", ".peppep.", ".pppppp.", ".pPppPp.", ".p.pp.p.", "..p..p..", "...pp..."] },
+  titan: { palette: { ".": null, m: "#8a8f99", M: "#4a4f59", e: "#e8480a", a: "#d8b64a" }, rows: [".mMMMm..", ".meeeM..", ".mMMMm..", "aMMMMMa.", "aMmmmMa.", ".MmmmM..", ".M.M.M..", ".m...m.."] },
 };
 
 const items = [...Object.entries(TILE_PATTERNS), ...Object.entries(SPRITES)];

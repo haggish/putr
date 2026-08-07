@@ -9,16 +9,18 @@ export interface MonsterTemplate {
   def: number;
   reward: number;
   xp: number;
+  /** Sprite key in SPRITES (game/renderer/tiles.ts); falls back to "foe". */
+  sprite?: string;
 }
 
 const MONSTERS: Record<string, MonsterTemplate> = {
-  addict: { name: "Drug Addict", hp: 8, atk: 3, def: 0, reward: 4, xp: 5 },
-  thief: { name: "Thief", hp: 12, atk: 4, def: 1, reward: 8, xp: 10 },
-  boar: { name: "Wild Boar", hp: 18, atk: 5, def: 2, reward: 6, xp: 12 },
+  addict: { name: "Drug Addict", hp: 8, atk: 3, def: 0, reward: 4, xp: 5, sprite: "addict" },
+  thief: { name: "Thief", hp: 12, atk: 4, def: 1, reward: 8, xp: 10, sprite: "thief" },
+  boar: { name: "Wild Boar", hp: 18, atk: 5, def: 2, reward: 6, xp: 12, sprite: "boar" },
   // "unreal" / exotic foes
-  wraith: { name: "Neon Wraith", hp: 14, atk: 6, def: 2, reward: 15, xp: 20 },
-  troll: { name: "U-Bahn Troll", hp: 26, atk: 7, def: 3, reward: 20, xp: 30 },
-  specter: { name: "Rave Specter", hp: 16, atk: 6, def: 1, reward: 14, xp: 18 },
+  wraith: { name: "Neon Wraith", hp: 14, atk: 6, def: 2, reward: 15, xp: 20, sprite: "wraith" },
+  troll: { name: "U-Bahn Troll", hp: 26, atk: 7, def: 3, reward: 20, xp: 30, sprite: "troll" },
+  specter: { name: "Rave Specter", hp: 16, atk: 6, def: 1, reward: 14, xp: 18, sprite: "specter" },
 };
 
 // Weighted draw lists keyed by tile kind (repeats = higher chance).
@@ -57,5 +59,5 @@ export function clubEncounter(
 
 /** The night-club dungeon boss. */
 export function clubBoss(): MonsterTemplate {
-  return { name: "Techno Titan", hp: 44, atk: 9, def: 4, reward: 60, xp: 60 };
+  return { name: "Techno Titan", hp: 44, atk: 9, def: 4, reward: 60, xp: 60, sprite: "titan" };
 }
