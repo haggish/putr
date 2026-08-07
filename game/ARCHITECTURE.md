@@ -1,6 +1,6 @@
 # Penultimate I — The Ring · Game Engine Architecture
 
-> Design note for Beads `nextjs-fullstack-starter-nwe.1` (rendering & game-loop
+> Design note for Beads `pu-nwe.1` (rendering & game-loop
 > architecture) and the scaffold in `nwe.2`. An Ultima III-like, tile-based,
 > keyboard-driven action-adventure set inside Berlin's S-Bahn Ring.
 
