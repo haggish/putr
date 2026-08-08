@@ -122,6 +122,11 @@ export class CanvasRenderer {
         const spr = this.sprites[state.keeper.sprite] ?? this.sprites.keeper;
         if (spr) {
           this.ctx.drawImage(spr, kvx * ts, kvy * ts);
+          // Hat/hair overlay drawn on top varies same-trade keepers.
+          const ov = state.keeper.overlay
+            ? this.sprites[state.keeper.overlay]
+            : undefined;
+          if (ov) this.ctx.drawImage(ov, kvx * ts, kvy * ts);
         } else {
           this.ctx.fillStyle = "#3a6a3a";
           this.ctx.fillRect(kvx * ts + ts * 0.2, kvy * ts + ts * 0.2, ts * 0.6, ts * 0.6);

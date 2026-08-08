@@ -5,6 +5,7 @@ import {
   enterInterior,
   exitInterior,
   isPassable,
+  keeperOverlay,
   keeperSprite,
   step,
   tileAt,
@@ -86,5 +87,25 @@ describe("interiors", () => {
       expect(keeperSprite(category)).toBe(sprite);
       expect(SPRITES[sprite]).toBeDefined();
     }
+  });
+
+  it("varies same-trade keepers with a deterministic hat/hair overlay", () => {
+    const valid = new Set([
+      "flatcap",
+      "cap",
+      "headscarf",
+      "hair_blonde",
+      "hair_grey",
+      undefined,
+    ]);
+    for (const id of ["node/1", "node/2", "node/42", "way/7", "node/900"]) {
+      const o = keeperOverlay("BAR", id);
+      expect(valid.has(o)).toBe(true);
+      if (o) expect(SPRITES[o]).toBeDefined();
+      expect(keeperOverlay("BAR", id)).toBe(o); // deterministic per venue
+    }
+    // Signature-headwear trades keep their identifying look (no overlay).
+    expect(keeperOverlay("ARMOURY", "node/1")).toBeUndefined();
+    expect(keeperOverlay("SPAETI", "node/1")).toBeUndefined();
   });
 });

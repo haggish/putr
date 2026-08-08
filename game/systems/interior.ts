@@ -120,6 +120,20 @@ export function keeperSprite(category: string): string {
   }
 }
 
+// Trades whose sprite already carries identifying headwear (toque, bandana,
+// headband, beanie) — they keep their look instead of a random hat.
+const SIGNATURE_HEADWEAR = new Set(["RESTAURANT", "ARMOURY", "SPORT", "SPAETI"]);
+// Hat/hair overlays for plain-haired trades; "" leaves the base hair showing.
+const KEEPER_HEADWEAR = ["flatcap", "cap", "headscarf", "hair_blonde", "hair_grey", ""];
+
+/** A deterministic hat/hair overlay (see renderer SPRITES) so two keepers of the
+ *  same trade don't look identical. Keyed off the venue id, like the persona
+ *  name in `systems/npc.ts`. Signature-headwear trades get no overlay. */
+export function keeperOverlay(category: string, id: string): string | undefined {
+  if (SIGNATURE_HEADWEAR.has(category)) return undefined;
+  return KEEPER_HEADWEAR[hash(id) % KEEPER_HEADWEAR.length] || undefined;
+}
+
 /** A single dark maze level for a night club (Beads 58k.2). Reuses interior
  *  tiles; walls are "building", floor "plaza", door + boss marker are "venue". */
 export function buildClubDungeon(venue: VenueInfo): {
@@ -201,7 +215,11 @@ export function enterInterior(state: GameState, venue: VenueInfo): GameState {
     locationCategory: venue.category,
     returnTo,
     dungeon: undefined,
-    keeper: { ...keeperSpot(map), sprite: keeperSprite(venue.category) },
+    keeper: {
+      ...keeperSpot(map),
+      sprite: keeperSprite(venue.category),
+      overlay: keeperOverlay(venue.category, venue.id),
+    },
     log: [...state.log, `You enter ${venue.name}.`].slice(-8),
   };
 }

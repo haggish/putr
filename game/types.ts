@@ -150,6 +150,7 @@ export interface GameState {
   /** Present when the current interior is a night-club dungeon. */
   dungeon?: { doorAt: Vec2; bossAt: Vec2; cleared: boolean };
   /** A stationary shop keeper standing in the current interior (impassable).
-   *  `sprite` is the trade-specific look (bartender, smith, …). */
-  keeper?: { x: number; y: number; sprite: string };
+   *  `sprite` is the trade-specific look (bartender, smith, …); `overlay` is an
+   *  optional hat/hair drawn on top so same-trade keepers vary. */
+  keeper?: { x: number; y: number; sprite: string; overlay?: string };
 }
