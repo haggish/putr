@@ -5,8 +5,10 @@ import {
   enterInterior,
   exitInterior,
   isPassable,
+  keeperSprite,
   step,
   tileAt,
+  SPRITES,
   type VenueInfo,
 } from "@/game";
 
@@ -53,7 +55,9 @@ describe("interiors", () => {
     const inside = enterInterior(base, venue);
 
     const k = inside.keeper!;
-    expect(k).toEqual({ x: Math.floor(inside.currentMap.width / 2), y: 1 });
+    expect(k.x).toBe(Math.floor(inside.currentMap.width / 2));
+    expect(k.y).toBe(1);
+    expect(k.sprite).toBe("bartender"); // a bar's keeper looks the part
     // A counter tile sits directly in front of (below) the keeper.
     expect(tileAt(inside.currentMap, { x: k.x, y: k.y + 1 })!.kind).toBe("building");
 
@@ -65,5 +69,22 @@ describe("interiors", () => {
     const r = step(beside, "east");
     expect(r.moved).toBe(false);
     expect(r.state.party.position).toEqual({ x: k.x - 1, y: k.y });
+  });
+
+  it("gives each trade its own keeper sprite that exists in the atlas", () => {
+    const trades: [string, string][] = [
+      ["BAR", "bartender"],
+      ["RESTAURANT", "cook"],
+      ["SPAETI", "spaeti"],
+      ["CLOTHING", "clerk"],
+      ["SPORT", "trainer"],
+      ["ARMOURY", "smith"],
+      ["GROCERY", "keeper"],
+      ["OTHER", "keeper"],
+    ];
+    for (const [category, sprite] of trades) {
+      expect(keeperSprite(category)).toBe(sprite);
+      expect(SPRITES[sprite]).toBeDefined();
+    }
   });
 });

@@ -119,7 +119,7 @@ export class CanvasRenderer {
       const kvx = state.keeper.x - originX;
       const kvy = state.keeper.y - originY;
       if (kvx >= 0 && kvy >= 0 && kvx < this.viewTiles && kvy < this.viewTiles) {
-        const spr = this.sprites.keeper;
+        const spr = this.sprites[state.keeper.sprite] ?? this.sprites.keeper;
         if (spr) {
           this.ctx.drawImage(spr, kvx * ts, kvy * ts);
         } else {

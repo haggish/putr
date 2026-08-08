@@ -99,6 +99,27 @@ export function keeperSpot(map: GameMap): { x: number; y: number } {
   return { x: Math.floor(map.width / 2), y: 1 };
 }
 
+/** The trade-specific keeper sprite for a venue category (see renderer SPRITES).
+ *  Mirrors the persona roles in `systems/npc.ts`. */
+export function keeperSprite(category: string): string {
+  switch (category) {
+    case "BAR":
+      return "bartender";
+    case "RESTAURANT":
+      return "cook";
+    case "SPAETI":
+      return "spaeti";
+    case "CLOTHING":
+      return "clerk";
+    case "SPORT":
+      return "trainer";
+    case "ARMOURY":
+      return "smith";
+    default: // GROCERY, LANDMARK, OTHER, …
+      return "keeper";
+  }
+}
+
 /** A single dark maze level for a night club (Beads 58k.2). Reuses interior
  *  tiles; walls are "building", floor "plaza", door + boss marker are "venue". */
 export function buildClubDungeon(venue: VenueInfo): {
@@ -180,7 +201,7 @@ export function enterInterior(state: GameState, venue: VenueInfo): GameState {
     locationCategory: venue.category,
     returnTo,
     dungeon: undefined,
-    keeper: keeperSpot(map),
+    keeper: { ...keeperSpot(map), sprite: keeperSprite(venue.category) },
     log: [...state.log, `You enter ${venue.name}.`].slice(-8),
   };
 }
