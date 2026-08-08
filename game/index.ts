@@ -14,6 +14,12 @@ export * from "./systems/combat";
 export * from "./systems/npc";
 export { CanvasRenderer, COMBAT_ANIM, TILE_COLORS } from "./renderer/canvasRenderer";
 export type { CombatFx, RendererOptions } from "./renderer/canvasRenderer";
-export { TILE_PATTERNS, SPRITES } from "./renderer/tiles";
+export {
+  TILE_PATTERNS,
+  SPRITES,
+  VENUE_TILES,
+  VENUE_LANDMARK_TILES,
+  venueIconKey,
+} from "./renderer/tiles";
 export type { TilePattern } from "./renderer/tiles";
 export { GameController } from "./controller";

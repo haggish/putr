@@ -67,6 +67,8 @@ export function mapFromAsset(asset: WorldAsset): GameMap {
       if (t) {
         t.kind = "venue";
         t.locationId = v.id;
+        t.venueCategory = v.category;
+        t.venueName = v.name;
       }
     }
   }

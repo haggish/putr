@@ -29,6 +29,10 @@ export interface Tile {
   district?: string;
   /** Set when kind === "venue": the enterable location. */
   locationId?: string;
+  /** Set when kind === "venue": the venue's category (drives its map look). */
+  venueCategory?: string;
+  /** Set when kind === "venue": the venue's name (for named-landmark icons). */
+  venueName?: string;
 }
 
 export interface GameMap {

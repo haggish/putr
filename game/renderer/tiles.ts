@@ -11,6 +11,297 @@ export interface TilePattern {
   rows: string[];
 }
 
+// Each venue category is its own 16x16 marker: a coloured, framed tile with an
+// icon typical of the trade, so places read differently on the map at a glance.
+// DEFAULT is the generic gold building (OTHER venues + interior doors).
+export const VENUE_TILES: Record<string, TilePattern> = {
+  DEFAULT: {
+    palette: { "#": "#8a6a1a", ".": "#b08d2a", D: "#d8b64a", d: "#5a3a12", w: "#e8d86a" },
+    rows: [
+      "################",
+      "#.DwwwwwwwwwwD.#",
+      "#.DDDDDDDDDDDD.#",
+      "#..............#",
+      "#.....dddd.....#",
+      "#....dddddd....#",
+      "#....dd..dd....#",
+      "#....dd..dd....#",
+      "#....dd..dd....#",
+      "#....dd..dd....#",
+      "#....dd..dd....#",
+      "#....dd..dd....#",
+      "#....dd..dd....#",
+      "#....dddddd....#",
+      "#....dddddd....#",
+      "################",
+    ],
+  },
+  // Bar — a cocktail glass.
+  BAR: {
+    palette: { "#": "#5a3a12", ".": "#9a6a2a", g: "#cfe8f0", l: "#d84a7a", o: "#6ab04a" },
+    rows: [
+      "################",
+      "#..............#",
+      "#..gggggggg....#",
+      "#...gllllg.....#",
+      "#....gllg......#",
+      "#.....ll.......#",
+      "#.....oo.......#",
+      "#......g.......#",
+      "#......g.......#",
+      "#......g.......#",
+      "#......g.......#",
+      "#....ggggg.....#",
+      "#..............#",
+      "#..............#",
+      "#..............#",
+      "################",
+    ],
+  },
+  // Späti — a beer bottle.
+  SPAETI: {
+    palette: { "#": "#245a1a", ".": "#3a7d28", b: "#8a5a2a", B: "#5a3a12", k: "#cfd4dc", f: "#e8e8e8" },
+    rows: [
+      "################",
+      "#..............#",
+      "#......kk......#",
+      "#......bb......#",
+      "#......bb......#",
+      "#.....bbbb.....#",
+      "#....bBBBBb....#",
+      "#....bBBBBb....#",
+      "#....bffffb....#",
+      "#....bffffb....#",
+      "#....bBBBBb....#",
+      "#....bBBBBb....#",
+      "#....bBBBBb....#",
+      "#....bBBBBb....#",
+      "#..............#",
+      "################",
+    ],
+  },
+  // Nightclub — a PA speaker.
+  NIGHTCLUB: {
+    palette: { "#": "#3a1a6a", ".": "#5a2a9a", s: "#241436", c: "#8a4ad6", C: "#e84ad6" },
+    rows: [
+      "################",
+      "#...ssssssss...#",
+      "#...s......s...#",
+      "#...s.cccc.s...#",
+      "#...s.cCCc.s...#",
+      "#...s.cCCc.s...#",
+      "#...s.cccc.s...#",
+      "#...s......s...#",
+      "#...s.cccc.s...#",
+      "#...s.cCCc.s...#",
+      "#...s.cccc.s...#",
+      "#...s......s...#",
+      "#...ssssssss...#",
+      "#..............#",
+      "#..............#",
+      "################",
+    ],
+  },
+  // Restaurant — a plate with fork & knife.
+  RESTAURANT: {
+    palette: { "#": "#6a1a1a", ".": "#9a2a2a", p: "#f0f0f0", P: "#b8bcc4", u: "#e8e8e8" },
+    rows: [
+      "################",
+      "#..............#",
+      "#..u........u..#",
+      "#..u..pppp..u..#",
+      "#..u.pPPPPp.u..#",
+      "#..u.pPPPPp.u..#",
+      "#..u.pPPPPp.u..#",
+      "#..u..pppp..u..#",
+      "#..u........u..#",
+      "#..u........u..#",
+      "#..............#",
+      "#..............#",
+      "#..............#",
+      "#..............#",
+      "#..............#",
+      "################",
+    ],
+  },
+  // Grocery — an apple.
+  GROCERY: {
+    palette: { "#": "#7a3a10", ".": "#b0641a", a: "#d0392b", A: "#f0a060", l: "#3a8a3a", s: "#5a3a12" },
+    rows: [
+      "################",
+      "#......s.l.....#",
+      "#.....aaaa.....#",
+      "#....aaaaaa....#",
+      "#...aaAaaaaa...#",
+      "#...aaaaaaaa...#",
+      "#...aaaaaaaa...#",
+      "#...aaaaaaaa...#",
+      "#....aaaaaa....#",
+      "#.....aaaa.....#",
+      "#..............#",
+      "#..............#",
+      "#..............#",
+      "#..............#",
+      "#..............#",
+      "################",
+    ],
+  },
+  // Clothing — a T-shirt.
+  CLOTHING: {
+    palette: { "#": "#1a3a6a", ".": "#2a5a9a", s: "#dfe6ee", S: "#9aa0c0" },
+    rows: [
+      "################",
+      "#..............#",
+      "#...ss....ss...#",
+      "#..ssss..ssss..#",
+      "#..ssssssssss..#",
+      "#..sssSSSSsss..#",
+      "#....ssssss....#",
+      "#....ssssss....#",
+      "#....ssssss....#",
+      "#....ssssss....#",
+      "#....ssssss....#",
+      "#....ssssss....#",
+      "#....ssssss....#",
+      "#..............#",
+      "#..............#",
+      "################",
+    ],
+  },
+  // Sport — a ball.
+  SPORT: {
+    palette: { "#": "#124a44", ".": "#1a7a6a", w: "#f0f0f0", k: "#2a2a2a" },
+    rows: [
+      "################",
+      "#..............#",
+      "#.....wwww.....#",
+      "#...wwwwwwww...#",
+      "#..wwwwkkwwww..#",
+      "#..wwwkkkkwww..#",
+      "#..wwwwkkwwww..#",
+      "#..wwwwwwwwww..#",
+      "#..wwwkwwkwww..#",
+      "#..wwwwwwwwww..#",
+      "#...wwwwwwww...#",
+      "#.....wwww.....#",
+      "#..............#",
+      "#..............#",
+      "#..............#",
+      "################",
+    ],
+  },
+  // Armoury — a sword.
+  ARMOURY: {
+    palette: { "#": "#2a2e35", ".": "#4a4f59", b: "#cfd4dc", B: "#8a8f99", g: "#d8b64a", h: "#6a4a2a" },
+    rows: [
+      "################",
+      "#......b.......#",
+      "#......b.......#",
+      "#......bB......#",
+      "#......bB......#",
+      "#......bB......#",
+      "#......bB......#",
+      "#....ggggg.....#",
+      "#......h.......#",
+      "#......h.......#",
+      "#......h.......#",
+      "#.....ggg......#",
+      "#..............#",
+      "#..............#",
+      "#..............#",
+      "################",
+    ],
+  },
+  // Landmark — a generic monument / obelisk.
+  LANDMARK: {
+    palette: { "#": "#4a4a52", ".": "#7a7a82", m: "#d8d8e0", M: "#a0a0a8", g: "#e8d84a" },
+    rows: [
+      "################",
+      "#......g.......#",
+      "#......m.......#",
+      "#.....mMm......#",
+      "#.....mMm......#",
+      "#.....mMm......#",
+      "#....mmMmm.....#",
+      "#....mmMmm.....#",
+      "#....mmMmm.....#",
+      "#....mmMmm.....#",
+      "#...mmmmmmm....#",
+      "#...mmmmmmm....#",
+      "#..mmmmmmmmm...#",
+      "#..............#",
+      "#..............#",
+      "################",
+    ],
+  },
+};
+
+// Bespoke bitmaps for specific, famous landmarks, matched by a keyword against
+// the normalised venue name (like the persona overrides). Add an entry to give
+// any single place its own icon.
+export const VENUE_LANDMARK_TILES: Record<string, TilePattern> = {
+  fernsehturm: {
+    palette: { "#": "#24406a", ".": "#3a5a8a", a: "#cfd4dc", b: "#dfe6ee", w: "#e84ad6", s: "#b0b4bc" },
+    rows: [
+      "################",
+      "#......a.......#",
+      "#......a.......#",
+      "#......a.......#",
+      "#.....bbb......#",
+      "#....bbwbb.....#",
+      "#....bbbbb.....#",
+      "#.....bbb......#",
+      "#......s.......#",
+      "#......s.......#",
+      "#......s.......#",
+      "#......s.......#",
+      "#......s.......#",
+      "#.....sss......#",
+      "#....sssss.....#",
+      "################",
+    ],
+  },
+  brandenburg: {
+    palette: { "#": "#4a4a3a", ".": "#7a7a6a", c: "#e8e8e0", t: "#c8c8b8", q: "#e8d84a" },
+    rows: [
+      "################",
+      "#....qqqq......#",
+      "#..tttttttttt..#",
+      "#..tttttttttt..#",
+      "#..c.c.c.c.c...#",
+      "#..c.c.c.c.c...#",
+      "#..c.c.c.c.c...#",
+      "#..c.c.c.c.c...#",
+      "#..c.c.c.c.c...#",
+      "#..c.c.c.c.c...#",
+      "#..c.c.c.c.c...#",
+      "#..tttttttttt..#",
+      "#..............#",
+      "#..............#",
+      "#..............#",
+      "################",
+    ],
+  },
+};
+
+const LANDMARK_MATCH: { match: string; key: string }[] = [
+  { match: "fernsehturm", key: "fernsehturm" },
+  { match: "tvtower", key: "fernsehturm" },
+  { match: "brandenburg", key: "brandenburg" },
+];
+
+/** Resolve which venue bitmap to draw: a named-landmark override wins, else the
+ *  category icon, else the gold default. Returns a key into the baked atlas. */
+export function venueIconKey(name?: string, category?: string): string {
+  if (name) {
+    const norm = name.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const m = LANDMARK_MATCH.find((l) => norm.includes(l.match));
+    if (m && VENUE_LANDMARK_TILES[m.key]) return m.key;
+  }
+  if (category && VENUE_TILES[category]) return category;
+  return "DEFAULT";
+}
+
 export const TILE_PATTERNS: Record<TileKind, TilePattern> = {
   water: {
     palette: { ".": "#2a4d69", "~": "#3a6a8c", d: "#20415c" },
@@ -138,27 +429,7 @@ export const TILE_PATTERNS: Record<TileKind, TilePattern> = {
       "|......|......|.",
     ],
   },
-  venue: {
-    palette: { "#": "#8a6a1a", ".": "#b08d2a", D: "#d8b64a", d: "#5a3a12", w: "#e8d86a" },
-    rows: [
-      "################",
-      "#.DwwwwwwwwwwD.#",
-      "#.DDDDDDDDDDDD.#",
-      "#..............#",
-      "#.....dddd.....#",
-      "#....dddddd....#",
-      "#....dd..dd....#",
-      "#....dd..dd....#",
-      "#....dd..dd....#",
-      "#....dd..dd....#",
-      "#....dd..dd....#",
-      "#....dd..dd....#",
-      "#....dd..dd....#",
-      "#....dddddd....#",
-      "#....dddddd....#",
-      "################",
-    ],
-  },
+  venue: VENUE_TILES.DEFAULT,
   station: {
     palette: { "#": "#16306a", ".": "#2a4b9b", o: "#e6ecf5" },
     rows: [

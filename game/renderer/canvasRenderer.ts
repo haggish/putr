@@ -2,11 +2,14 @@
 // centered on the party. Uses flat colors as placeholders; the pixel-art
 // tileset bead swaps these for sprites from the atlas.
 
-import type { GameState, TileKind } from "../types";
+import type { GameState, Tile, TileKind } from "../types";
 import {
   renderTilePattern,
   SPRITES,
   TILE_PATTERNS,
+  VENUE_TILES,
+  VENUE_LANDMARK_TILES,
+  venueIconKey,
   type TilePattern,
 } from "./tiles";
 import { heroSprite } from "../systems/party";
@@ -47,6 +50,7 @@ export class CanvasRenderer {
   private readonly tileSize: number;
   private readonly viewTiles: number;
   private readonly atlas: Partial<Record<TileKind, HTMLCanvasElement>> = {};
+  private readonly venueAtlas: Partial<Record<string, HTMLCanvasElement>> = {};
   private readonly sprites: Partial<Record<string, HTMLCanvasElement>> = {};
 
   constructor(
@@ -72,6 +76,12 @@ export class CanvasRenderer {
     (Object.keys(TILE_PATTERNS) as TileKind[]).forEach((k) => {
       this.atlas[k] = bake(TILE_PATTERNS[k]);
     });
+    for (const [key, pattern] of Object.entries({
+      ...VENUE_TILES,
+      ...VENUE_LANDMARK_TILES,
+    })) {
+      this.venueAtlas[key] = bake(pattern);
+    }
     for (const key of Object.keys(SPRITES)) {
       this.sprites[key] = bake(SPRITES[key]);
     }
@@ -84,6 +94,19 @@ export class CanvasRenderer {
       this.ctx.fillStyle = TILE_COLORS[kind];
       this.ctx.fillRect(px, py, this.tileSize, this.tileSize);
     }
+  }
+
+  /** Draw a tile, using the per-trade (or named-landmark) bitmap for venues. */
+  private drawMapTile(tile: Tile, px: number, py: number): void {
+    if (tile.kind === "venue" && (tile.venueCategory || tile.venueName)) {
+      const key = venueIconKey(tile.venueName, tile.venueCategory);
+      const img = this.venueAtlas[key] ?? this.atlas.venue;
+      if (img) {
+        this.ctx.drawImage(img, px, py);
+        return;
+      }
+    }
+    this.drawTile(tile.kind, px, py);
   }
 
   /** Canvas pixel size this renderer expects. */
@@ -110,7 +133,7 @@ export class CanvasRenderer {
         if (mx < 0 || my < 0 || mx >= map.width || my >= map.height) continue;
         const tile = map.tiles[my * map.width + mx];
         if (!tile) continue;
-        this.drawTile(tile.kind, vx * ts, vy * ts);
+        this.drawMapTile(tile, vx * ts, vy * ts);
       }
     }
 
