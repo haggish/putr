@@ -27,6 +27,7 @@ import {
 import { loadParty, saveParty } from "./actions";
 import { npcReply, type NpcTurn } from "./npc-actions";
 import { Sfx } from "./sfx";
+import { Music } from "./music";
 
 type MemberView = {
   name: string;
@@ -81,6 +82,7 @@ export function GameCanvas() {
   const stationByXYRef = useRef<Map<string, Station>>(new Map());
   const rendererRef = useRef<CanvasRenderer | null>(null);
   const sfxRef = useRef<Sfx | null>(null);
+  const musicRef = useRef<Music | null>(null);
   const prevGoldRef = useRef(0);
   const animRef = useRef({
     prev: new Map<string, number>(),
@@ -99,6 +101,7 @@ export function GameCanvas() {
   const [npcBusy, setNpcBusy] = useState(false);
   const [allStations, setAllStations] = useState<Station[]>([]);
   const [muted, setMuted] = useState(false);
+  const [musicOff, setMusicOff] = useState(false);
 
   const refresh = useCallback(() => {
     const c = controllerRef.current;
@@ -107,6 +110,16 @@ export function GameCanvas() {
     // A rise in gold means a sale or combat loot — ring the coin.
     if (s.party.gold > prevGoldRef.current) sfxRef.current?.gold();
     prevGoldRef.current = s.party.gold;
+
+    // Background music follows the scene (style varies by venue name).
+    const m = musicRef.current;
+    if (m) {
+      if (s.mode === "combat") m.setScene("combat");
+      else if (s.locationCategory === "NIGHTCLUB") m.setScene("club", s.locationName);
+      else if (s.locationCategory === "SPAETI") m.setScene("spaeti", s.locationName);
+      else if (s.locationName) m.setScene("shop");
+      else m.setScene("adventure");
+    }
     const { x, y } = s.party.position;
     const tile = s.currentMap.tiles[y * s.currentMap.width + x];
     setHud({
@@ -166,6 +179,8 @@ export function GameCanvas() {
     const anim = animRef.current;
     const sfx = sfxRef.current ?? new Sfx();
     sfxRef.current = sfx;
+    const music = musicRef.current ?? new Music();
+    musicRef.current = music;
 
     const attach = (initial?: GameState) => {
       if (disposed) return;
@@ -261,6 +276,7 @@ export function GameCanvas() {
       if (tag === "BUTTON" && ["Enter", " ", "e", "E"].includes(e.key)) return;
       const controller = controllerRef.current;
       if (!controller) return;
+      music.resume(); // unlock/start audio on the first gesture
       const before = controller.getState();
       const wasCombat = before.mode === "combat";
       const posBefore = before.party.position;
@@ -315,6 +331,7 @@ export function GameCanvas() {
       window.removeEventListener("keydown", onKey);
       if (anim.raf) cancelAnimationFrame(anim.raf);
       anim.raf = 0;
+      music.stop();
     };
   }, [refresh]);
 
@@ -467,6 +484,21 @@ export function GameCanvas() {
                 className="rounded border border-neutral-300 px-2 py-0.5 text-xs hover:bg-neutral-100"
               >
                 {muted ? "🔇" : "🔊"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !musicOff;
+                  setMusicOff(next);
+                  musicRef.current?.setEnabled(!next);
+                }}
+                aria-label={musicOff ? "Music off" : "Music on"}
+                title={musicOff ? "Music off" : "Music on"}
+                className={`rounded border border-neutral-300 px-2 py-0.5 text-xs hover:bg-neutral-100 ${
+                  musicOff ? "opacity-40" : ""
+                }`}
+              >
+                🎵
               </button>
               <button
                 type="button"
