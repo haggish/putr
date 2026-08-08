@@ -378,6 +378,7 @@ export function GameCanvas() {
     const { reply } = await npcReply({
       category: s?.locationCategory ?? "OTHER",
       venueName: s?.locationName ?? "this place",
+      district: s?.locationDistrict,
       history,
       message: text,
     });

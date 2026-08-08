@@ -145,6 +145,8 @@ export interface GameState {
   locationName?: string;
   /** Category of the venue currently inside (drives its shop catalog). */
   locationCategory?: string;
+  /** District of the venue currently inside (flavours the keeper's persona). */
+  locationDistrict?: string;
   /** Where to restore to when leaving an interior. */
   returnTo?: { map: GameMap; position: Vec2; mode: GameMode };
   /** Present when the current interior is a night-club dungeon. */

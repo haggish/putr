@@ -21,4 +21,26 @@ describe("npc personas", () => {
     expect(p.systemPrompt).toContain("Somewhere");
     expect(p.systemPrompt.toLowerCase()).toContain("local");
   });
+
+  it("folds the district into the prompt when known", () => {
+    const p = npcPersona({
+      category: "BAR",
+      venueName: "The Rusty Anchor",
+      district: "Kreuzberg",
+    });
+    expect(p.systemPrompt).toContain("Kreuzberg");
+    // Absent when unknown — no stray "Neighbourhood:" line.
+    const q = npcPersona({ category: "BAR", venueName: "The Rusty Anchor" });
+    expect(q.systemPrompt).not.toContain("Neighbourhood");
+  });
+
+  it("applies a per-venue personality override, ignoring the category", () => {
+    const berghain = npcPersona({ category: "NIGHTCLUB", venueName: "Berghain" });
+    expect(berghain.systemPrompt).toContain("Nicht heute"); // bespoke, not the default bouncer
+
+    // Name variants still match (normalised: alphanumerics only).
+    const kitkat = npcPersona({ category: "OTHER", venueName: "Kit Kat Club" });
+    expect(kitkat.systemPrompt.toLowerCase()).toContain("freak");
+    expect(kitkat.systemPrompt.toLowerCase()).toContain("dress code");
+  });
 });

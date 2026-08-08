@@ -11,6 +11,7 @@ import type {
   Tile,
   TileKind,
 } from "../types";
+import { tileAt } from "../world";
 import type { VenueInfo } from "../world-asset";
 
 function hash(s: string): number {
@@ -184,6 +185,8 @@ export function enterInterior(state: GameState, venue: VenueInfo): GameState {
     position: { ...state.party.position },
     mode: state.mode,
   };
+  // The venue's district lives on the overworld tile the party is standing on.
+  const district = tileAt(state.currentMap, state.party.position)?.district;
 
   if (venue.category === "NIGHTCLUB") {
     const d = buildClubDungeon(venue);
@@ -194,6 +197,7 @@ export function enterInterior(state: GameState, venue: VenueInfo): GameState {
       party: { ...state.party, position: { ...d.spawn }, facing: "north" },
       locationName: venue.name,
       locationCategory: venue.category,
+      locationDistrict: district,
       returnTo,
       dungeon: { doorAt: d.doorAt, bossAt: d.bossAt, cleared: false },
       keeper: undefined, // a dungeon, not a shop
@@ -213,6 +217,7 @@ export function enterInterior(state: GameState, venue: VenueInfo): GameState {
     party: { ...state.party, position: { x: cx, y: map.height - 2 }, facing: "north" },
     locationName: venue.name,
     locationCategory: venue.category,
+    locationDistrict: district,
     returnTo,
     dungeon: undefined,
     keeper: {
@@ -259,6 +264,7 @@ export function exitInterior(state: GameState): GameState {
     party: { ...state.party, position: { ...position }, facing: "south" },
     locationName: undefined,
     locationCategory: undefined,
+    locationDistrict: undefined,
     returnTo: undefined,
     dungeon: undefined,
     keeper: undefined,

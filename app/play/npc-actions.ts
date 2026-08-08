@@ -20,6 +20,7 @@ export interface NpcTurn {
 export async function npcReply(input: {
   category: string;
   venueName: string;
+  district?: string;
   id?: string;
   history: NpcTurn[];
   message: string;
@@ -36,6 +37,7 @@ export async function npcReply(input: {
   const { systemPrompt } = npcPersona({
     category: input.category,
     venueName: input.venueName,
+    district: input.district,
     id: input.id,
   });
   const history = input.history
