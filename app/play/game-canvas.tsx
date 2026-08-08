@@ -85,6 +85,11 @@ export function GameCanvas() {
   const sfxRef = useRef<Sfx | null>(null);
   const musicRef = useRef<Music | null>(null);
   const prevGoldRef = useRef(0);
+  // Mirrors of UI state so the single keydown handler never reads stale values.
+  const selectedRef = useRef(0);
+  const packSelRef = useRef(0);
+  const talkingRef = useRef(false);
+  const allStationsRef = useRef<Station[]>([]);
   const animRef = useRef({
     prev: new Map<string, number>(),
     hits: new Map<string, number>(),
@@ -94,6 +99,7 @@ export function GameCanvas() {
   });
   const [hud, setHud] = useState<Hud | null>(null);
   const [selected, setSelected] = useState(0);
+  const [packSel, setPackSel] = useState(0);
   const [saved, setSaved] = useState(false);
   const [talking, setTalking] = useState(false);
   const [keeper, setKeeper] = useState("");
@@ -165,6 +171,16 @@ export function GameCanvas() {
       log: s.log,
     });
   }, []);
+
+  useEffect(() => {
+    selectedRef.current = selected;
+  }, [selected]);
+  useEffect(() => {
+    packSelRef.current = packSel;
+  }, [packSel]);
+  useEffect(() => {
+    talkingRef.current = talking;
+  }, [talking]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -271,6 +287,116 @@ export function GameCanvas() {
       if (!anim.raf) anim.raf = requestAnimationFrame(loop);
     };
 
+    // Keyboard layer for the sidebar. Returns true when it consumes the key
+    // (so it doesn't also move the party). Reads game data live from the
+    // controller and UI selection from refs, so nothing is stale.
+    const sidebarKey = (key: string): boolean => {
+      const c = controllerRef.current;
+      if (!c) return false;
+      const s = c.getState();
+
+      // Audio toggles work anywhere.
+      if (key === "m" || key === "M") {
+        setMusicOff((v) => {
+          const nv = !v;
+          musicRef.current?.setEnabled(!nv);
+          return nv;
+        });
+        return true;
+      }
+      if (key === "v" || key === "V") {
+        setMuted((v) => {
+          const nv = !v;
+          if (sfxRef.current) sfxRef.current.enabled = !nv;
+          return nv;
+        });
+        return true;
+      }
+
+      // Dialogue.
+      if (key === "Escape") {
+        if (talkingRef.current) {
+          setTalking(false);
+          return true;
+        }
+        return false;
+      }
+      if (
+        (key === "t" || key === "T") &&
+        s.locationName &&
+        s.mode !== "combat"
+      ) {
+        if (talkingRef.current) setTalking(false);
+        else openTalk();
+        return true;
+      }
+
+      if (s.mode === "combat") return false; // combat owns its own keys
+
+      // Cycle the selected hero (equip target).
+      if (key === "c" || key === "C") {
+        const n = s.party.members.length;
+        if (n) setSelected((i) => (i + 1) % n);
+        return true;
+      }
+
+      const inv = s.party.inventory;
+      const catalog = shopCatalogFor(s.locationCategory);
+      const inShopNow = !!s.locationName && catalog.length > 0;
+      const { x, y } = s.party.position;
+      const tile = s.currentMap.tiles[y * s.currentMap.width + x];
+      const station =
+        tile?.kind === "station"
+          ? stationByXYRef.current.get(`${x},${y}`)
+          : undefined;
+
+      // Pack: [ ] pick, G equip onto the selected hero, X sell (in a shop).
+      if (inv.length) {
+        if (key === "[") {
+          setPackSel((i) => (i - 1 + inv.length) % inv.length);
+          return true;
+        }
+        if (key === "]") {
+          setPackSel((i) => (i + 1) % inv.length);
+          return true;
+        }
+        if (key === "g" || key === "G") {
+          controllerRef.current?.equip(
+            selectedRef.current,
+            Math.min(packSelRef.current, inv.length - 1),
+          );
+          refresh();
+          return true;
+        }
+        if ((key === "x" || key === "X") && inShopNow) {
+          controllerRef.current?.sell(Math.min(packSelRef.current, inv.length - 1));
+          refresh();
+          return true;
+        }
+      }
+
+      // Number keys act on the context's primary list.
+      if (/^[1-9]$/.test(key)) {
+        const n = Number(key) - 1;
+        if (station) {
+          const list = allStationsRef.current.filter((st) => st.id !== station.id);
+          if (n < list.length) rideTo(list[n]);
+          return true; // swallow digits while on a platform
+        }
+        if (inShopNow) {
+          if (n < catalog.length) buy(catalog[n].id);
+          return true;
+        }
+        if (n < s.party.members.length) {
+          setSelected(n);
+          return true;
+        }
+        return false;
+      }
+
+      return false;
+    };
+
     const onKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
       // Let text inputs (the NPC chat) receive keys without moving the party.
@@ -279,6 +405,10 @@ export function GameCanvas() {
       const controller = controllerRef.current;
       if (!controller) return;
       music.resume(); // unlock/start audio on the first gesture
+      if (sidebarKey(e.key)) {
+        e.preventDefault();
+        return;
+      }
       const before = controller.getState();
       const wasCombat = before.mode === "combat";
       const posBefore = before.party.position;
@@ -307,7 +437,8 @@ export function GameCanvas() {
       .then(async (asset: WorldAsset) => {
         venuesRef.current = venueMap(asset);
         stationByXYRef.current = stationMap(asset);
-        setAllStations(stationList(asset));
+        allStationsRef.current = stationList(asset);
+        setAllStations(allStationsRef.current);
         const base = stateFromAsset(asset);
         const loaded = await loadParty();
         if (loaded) {
@@ -411,6 +542,21 @@ export function GameCanvas() {
   }, [hud?.locationName, talking]);
 
   const inShop = !!hud?.locationName && (hud?.shop.length ?? 0) > 0;
+  const packSelClamped =
+    hud && hud.inventory.length ? Math.min(packSel, hud.inventory.length - 1) : 0;
+
+  // Context-sensitive key hints shown at the top of the sidebar.
+  const keyHints = hud?.combat
+    ? "Arrows / WASD: attack or move a hero · F: flee"
+    : talking
+      ? "Type your message · Enter: send · Esc: leave"
+      : hud?.onStation
+        ? "1–9: board that train · step off the platform to cancel"
+        : inShop
+          ? "1–9: buy · [ ]: pick pack item · G: equip · X: sell · C: switch hero · T: talk · Enter: leave"
+          : hud?.locationName
+            ? "T: talk to the keeper · Enter: step outside"
+            : "Move: WASD / arrows · Enter: enter a place · 1–N: pick hero · [ ] pack · G: equip · M/V: music/sound";
 
   return (
     <div className="game-screen flex flex-col gap-4 lg:flex-row">
@@ -422,6 +568,15 @@ export function GameCanvas() {
       />
 
       <aside className="w-full max-w-sm space-y-4 font-mono text-sm">
+        {hud ? (
+          <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-2 text-xs leading-snug text-neutral-600">
+            <span className="font-semibold uppercase tracking-wide text-neutral-500">
+              Keys{" "}
+            </span>
+            {keyHints}
+          </div>
+        ) : null}
+
         {hud?.combat ? (
           <div className="rounded-lg border border-red-300 bg-red-50 p-3">
             <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-red-700">
@@ -546,7 +701,10 @@ export function GameCanvas() {
                       }`}
                     >
                       <div className="flex justify-between">
-                        <span className="font-semibold">{m.name}</span>
+                        <span className="font-semibold">
+                          <span className="text-neutral-400">{i + 1}. </span>
+                          {m.name}
+                        </span>
                         <span className="text-xs text-neutral-500">
                           {m.race.toLowerCase()} {m.class.toLowerCase()}
                         </span>
@@ -608,13 +766,17 @@ export function GameCanvas() {
             <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-700">
               Shop — {hud.locationName}
             </div>
+            <p className="mb-1 text-xs text-neutral-500">Press 1–9 to buy.</p>
             <ul className="space-y-1 text-neutral-700">
-              {hud.shop.map((item) => (
+              {hud.shop.map((item, i) => (
                 <li
                   key={item.id}
                   className="flex items-center justify-between gap-2"
                 >
                   <span>
+                    {i < 9 ? (
+                      <span className="text-neutral-400">{i + 1}. </span>
+                    ) : null}
                     {item.name} — {item.price}g
                     {item.attack ? ` (ATK ${item.attack})` : ""}
                     {item.defense ? ` (DEF ${item.defense})` : ""}
@@ -640,7 +802,7 @@ export function GameCanvas() {
               onClick={openTalk}
               className="w-full rounded border border-neutral-300 px-2 py-1 text-xs hover:bg-neutral-100"
             >
-              Talk to the keeper
+              Talk to the keeper <span className="text-neutral-400">(T)</span>
             </button>
           </div>
         ) : null}
@@ -677,10 +839,15 @@ export function GameCanvas() {
             </ul>
             <div className="flex gap-1">
               <input
+                autoFocus
                 value={npcInput}
                 onChange={(e) => setNpcInput(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") sendNpc();
+                  else if (e.key === "Escape") {
+                    e.currentTarget.blur();
+                    setTalking(false);
+                  }
                 }}
                 placeholder="Say something…"
                 maxLength={200}
@@ -703,16 +870,21 @@ export function GameCanvas() {
             <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-blue-700">
               {hud.onStation.kind}-Bahn · {hud.onStation.name}
             </div>
-            <p className="mb-1 text-xs text-neutral-500">Board a train to:</p>
+            <p className="mb-1 text-xs text-neutral-500">
+              Board a train to (press 1–9):
+            </p>
             <ul className="max-h-48 space-y-1 overflow-y-auto text-neutral-700">
               {allStations
                 .filter((st) => st.id !== hud.onStation!.id)
-                .map((st) => (
+                .map((st, i) => (
                   <li
                     key={st.id}
                     className="flex items-center justify-between gap-2"
                   >
                     <span>
+                      {i < 9 ? (
+                        <span className="text-neutral-400">{i + 1}. </span>
+                      ) : null}
                       <span className="text-neutral-400">{st.kind}</span>{" "}
                       {st.name}
                     </span>
@@ -734,16 +906,23 @@ export function GameCanvas() {
             <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
               Pack{" "}
               <span className="normal-case text-neutral-400">
-                (equip → {hud.members[selected]?.name})
+                ([ ] pick · G: equip → {hud.members[selected]?.name}
+                {inShop ? " · X: sell" : ""})
               </span>
             </div>
             <ul className="space-y-1 text-neutral-700">
               {hud.inventory.map((it, i) => (
                 <li
                   key={it.name}
-                  className="flex items-center justify-between gap-2"
+                  onClick={() => setPackSel(i)}
+                  className={`flex cursor-pointer items-center justify-between gap-2 rounded px-1 ${
+                    i === packSelClamped ? "bg-amber-50 ring-1 ring-amber-300" : ""
+                  }`}
                 >
                   <span>
+                    <span className="text-neutral-400">
+                      {i === packSelClamped ? "▶ " : "  "}
+                    </span>
                     {it.name} ×{it.qty}
                   </span>
                   <span className="flex gap-1">
