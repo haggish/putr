@@ -26,6 +26,7 @@ import {
 } from "@/game";
 import { loadParty, saveParty } from "./actions";
 import { npcReply, type NpcTurn } from "./npc-actions";
+import { Sfx } from "./sfx";
 
 type MemberView = {
   name: string;
@@ -79,6 +80,8 @@ export function GameCanvas() {
   const venuesRef = useRef<Map<string, VenueInfo>>(new Map());
   const stationByXYRef = useRef<Map<string, Station>>(new Map());
   const rendererRef = useRef<CanvasRenderer | null>(null);
+  const sfxRef = useRef<Sfx | null>(null);
+  const prevGoldRef = useRef(0);
   const animRef = useRef({
     prev: new Map<string, number>(),
     hits: new Map<string, number>(),
@@ -95,11 +98,15 @@ export function GameCanvas() {
   const [npcInput, setNpcInput] = useState("");
   const [npcBusy, setNpcBusy] = useState(false);
   const [allStations, setAllStations] = useState<Station[]>([]);
+  const [muted, setMuted] = useState(false);
 
   const refresh = useCallback(() => {
     const c = controllerRef.current;
     if (!c) return;
     const s = c.getState();
+    // A rise in gold means a sale or combat loot — ring the coin.
+    if (s.party.gold > prevGoldRef.current) sfxRef.current?.gold();
+    prevGoldRef.current = s.party.gold;
     const { x, y } = s.party.position;
     const tile = s.currentMap.tiles[y * s.currentMap.width + x];
     setHud({
@@ -157,11 +164,15 @@ export function GameCanvas() {
 
     let disposed = false;
     const anim = animRef.current;
+    const sfx = sfxRef.current ?? new Sfx();
+    sfxRef.current = sfx;
 
     const attach = (initial?: GameState) => {
       if (disposed) return;
       const controller = new GameController(renderer, initial, venuesRef.current);
       controllerRef.current = controller;
+      // Seed the gold baseline so loading a save doesn't ring the coin.
+      prevGoldRef.current = controller.getState().party.gold;
       controller.render();
       refresh();
     };
@@ -171,19 +182,28 @@ export function GameCanvas() {
       const combat = controllerRef.current?.getState().combat;
       if (!combat) return;
       const now = performance.now();
+      let foeHit = false;
+      let heroHit = false;
       for (const c of combat.combatants) {
         const prevHp = anim.prev.get(c.id);
         if (prevHp !== undefined && c.hp < prevHp) {
           if (c.hp <= 0 && prevHp > 0) anim.deaths.set(c.id, now);
           else anim.hits.set(c.id, now);
+          if (c.side === "monster") foeHit = true;
+          else heroHit = true;
         }
         anim.prev.set(c.id, c.hp);
       }
+      // One impact per side per exchange keeps a multi-monster turn from stacking.
+      if (foeHit) sfx.hitMonster();
+      if (heroHit) sfx.hitParty();
       if (combat.outcome && !anim.victory) {
         anim.victory = {
           at: now,
           side: combat.outcome === "won" ? "party" : "monster",
         };
+        if (combat.outcome === "won") sfx.win();
+        else if (combat.outcome === "lost") sfx.lose();
       }
     };
 
@@ -241,14 +261,23 @@ export function GameCanvas() {
       if (tag === "BUTTON" && ["Enter", " ", "e", "E"].includes(e.key)) return;
       const controller = controllerRef.current;
       if (!controller) return;
-      const wasCombat = controller.getState().mode === "combat";
+      const before = controller.getState();
+      const wasCombat = before.mode === "combat";
+      const posBefore = before.party.position;
       if (controller.handleKey(e.key)) {
         e.preventDefault();
-        if (controller.getState().mode === "combat") {
+        const after = controller.getState();
+        if (after.mode === "combat") {
+          if (!wasCombat) sfx.encounter(); // just got ambushed
           diffCombat();
           ensureLoop();
-        } else if (wasCombat) {
-          resetAnim(); // left combat by fleeing
+        } else {
+          if (wasCombat) resetAnim(); // left combat by fleeing
+          else if (
+            after.party.position.x !== posBefore.x ||
+            after.party.position.y !== posBefore.y
+          )
+            sfx.move();
         }
         refresh();
       }
@@ -425,6 +454,19 @@ export function GameCanvas() {
               {saved ? (
                 <span className="text-xs text-green-600">Saved!</span>
               ) : null}
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !muted;
+                  setMuted(next);
+                  if (sfxRef.current) sfxRef.current.enabled = !next;
+                }}
+                aria-label={muted ? "Unmute sound" : "Mute sound"}
+                title={muted ? "Unmute sound" : "Mute sound"}
+                className="rounded border border-neutral-300 px-2 py-0.5 text-xs hover:bg-neutral-100"
+              >
+                {muted ? "🔇" : "🔊"}
+              </button>
               <button
                 type="button"
                 onClick={save}
