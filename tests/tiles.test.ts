@@ -37,6 +37,9 @@ describe("pixel-art patterns", () => {
     // A named-landmark override wins over the category.
     expect(venueIconKey("Berliner Fernsehturm", "LANDMARK")).toBe("fernsehturm");
     expect(venueIconKey("Brandenburger Tor", "LANDMARK")).toBe("brandenburg");
+    expect(venueIconKey("Siegessäule", "LANDMARK")).toBe("siegessaule");
+    expect(venueIconKey("Reichstag", "LANDMARK")).toBe("reichstag");
+    expect(venueIconKey("Berliner Dom", "LANDMARK")).toBe("berlinerdom");
     // Unknown / OTHER falls back to the gold default.
     expect(venueIconKey("Some Place", "OTHER")).toBe("DEFAULT");
     expect(venueIconKey()).toBe("DEFAULT");
