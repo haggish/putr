@@ -149,4 +149,6 @@ export interface GameState {
   returnTo?: { map: GameMap; position: Vec2; mode: GameMode };
   /** Present when the current interior is a night-club dungeon. */
   dungeon?: { doorAt: Vec2; bossAt: Vec2; cleared: boolean };
+  /** A stationary shop keeper standing in the current interior (impassable). */
+  keeper?: Vec2;
 }

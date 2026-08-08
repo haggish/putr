@@ -87,7 +87,16 @@ export function buildInterior(venue: VenueInfo): GameMap {
       break;
   }
 
+  // A service counter at the back-centre; the keeper (placed by enterInterior)
+  // stands on the floor tile just behind it at (cx, 1).
+  set(cx, 2, "building");
+
   return { id: `interior:${venue.id}`, width, height, tiles };
+}
+
+/** Where the keeper stands in an interior built by `buildInterior`. */
+export function keeperSpot(map: GameMap): { x: number; y: number } {
+  return { x: Math.floor(map.width / 2), y: 1 };
 }
 
 /** A single dark maze level for a night club (Beads 58k.2). Reuses interior
@@ -152,6 +161,7 @@ export function enterInterior(state: GameState, venue: VenueInfo): GameState {
       locationCategory: venue.category,
       returnTo,
       dungeon: { doorAt: d.doorAt, bossAt: d.bossAt, cleared: false },
+      keeper: undefined, // a dungeon, not a shop
       log: [
         ...state.log,
         `You slip past the door into ${venue.name}. It's dark, and something moves.`,
@@ -170,6 +180,7 @@ export function enterInterior(state: GameState, venue: VenueInfo): GameState {
     locationCategory: venue.category,
     returnTo,
     dungeon: undefined,
+    keeper: keeperSpot(map),
     log: [...state.log, `You enter ${venue.name}.`].slice(-8),
   };
 }
@@ -211,6 +222,7 @@ export function exitInterior(state: GameState): GameState {
     locationCategory: undefined,
     returnTo: undefined,
     dungeon: undefined,
+    keeper: undefined,
     log: [...state.log, "You step back outside."].slice(-8),
   };
 }

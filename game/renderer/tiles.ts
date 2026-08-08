@@ -381,6 +381,29 @@ export const SPRITES: Record<string, TilePattern> = {
     ],
   },
 
+  // Shop keeper — moustached, white shirt under a green apron.
+  keeper: {
+    palette: { ".": null, h: "#5a3a20", s: "#e8c9a0", m: "#3a2a10", w: "#dfe6ee", a: "#3a6a3a", A: "#255025" },
+    rows: [
+      "................",
+      ".....hhhh.......",
+      "....hhhhhh......",
+      "....hssssh......",
+      "....ssssss......",
+      "....smmms.......",
+      ".....ssss.......",
+      "...wwwwwwww.....",
+      "..wwaAAAAaww....",
+      "..waAAAAAAaw....",
+      "..waAAAAAAaw....",
+      "...aAAAAAAa.....",
+      "...aAAAAAAa.....",
+      "....aA..Aa......",
+      "....s....s......",
+      "....ss..ss......",
+    ],
+  },
+
   // ── Party classes ──────────────────────────────────────────────────
   // Fighter — plate armour, sword.
   fighter: {

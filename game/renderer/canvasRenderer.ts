@@ -114,6 +114,21 @@ export class CanvasRenderer {
       }
     }
 
+    // A stationary keeper standing behind the shop counter, if any is in view.
+    if (state.keeper) {
+      const kvx = state.keeper.x - originX;
+      const kvy = state.keeper.y - originY;
+      if (kvx >= 0 && kvy >= 0 && kvx < this.viewTiles && kvy < this.viewTiles) {
+        const spr = this.sprites.keeper;
+        if (spr) {
+          this.ctx.drawImage(spr, kvx * ts, kvy * ts);
+        } else {
+          this.ctx.fillStyle = "#3a6a3a";
+          this.ctx.fillRect(kvx * ts + ts * 0.2, kvy * ts + ts * 0.2, ts * 0.6, ts * 0.6);
+        }
+      }
+    }
+
     // Party is always centered — drawn as the leader's class.
     const leader = state.party.members[0];
     const hero =

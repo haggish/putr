@@ -5,6 +5,7 @@ import {
   enterInterior,
   exitInterior,
   isPassable,
+  step,
   tileAt,
   type VenueInfo,
 } from "@/game";
@@ -43,5 +44,26 @@ describe("interiors", () => {
     expect(outside.party.position).toEqual({ x: 5, y: 5 });
     expect(outside.returnTo).toBeUndefined();
     expect(outside.locationName).toBeUndefined();
+    expect(outside.keeper).toBeUndefined();
+  });
+
+  it("stands a keeper behind the counter that blocks the party", () => {
+    const base = createInitialState();
+    base.party.position = { x: 5, y: 5 };
+    const inside = enterInterior(base, venue);
+
+    const k = inside.keeper!;
+    expect(k).toEqual({ x: Math.floor(inside.currentMap.width / 2), y: 1 });
+    // A counter tile sits directly in front of (below) the keeper.
+    expect(tileAt(inside.currentMap, { x: k.x, y: k.y + 1 })!.kind).toBe("building");
+
+    // Walking into the keeper is blocked — you can't stand on the shop owner.
+    const beside = {
+      ...inside,
+      party: { ...inside.party, position: { x: k.x - 1, y: k.y } },
+    };
+    const r = step(beside, "east");
+    expect(r.moved).toBe(false);
+    expect(r.state.party.position).toEqual({ x: k.x - 1, y: k.y });
   });
 });

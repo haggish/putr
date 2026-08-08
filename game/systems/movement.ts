@@ -17,8 +17,11 @@ export function step(state: GameState, dir: Direction): StepResult {
     y: state.party.position.y + delta.y,
   };
 
-  if (!isPassable(state.currentMap, target)) {
-    // Blocked: still update facing so the player can see which way they turned.
+  const onKeeper =
+    state.keeper?.x === target.x && state.keeper?.y === target.y;
+  if (!isPassable(state.currentMap, target) || onKeeper) {
+    // Blocked (a wall, or the keeper standing there): still update facing so the
+    // player can see which way they turned.
     return {
       state: { ...state, party: { ...state.party, facing: dir } },
       moved: false,
