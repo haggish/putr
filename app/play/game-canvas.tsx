@@ -59,6 +59,7 @@ type Hud = {
     activeId?: string;
     party: { id: string; name: string; hp: number; maxHp: number }[];
     monsters: { name: string; hp: number; maxHp: number }[];
+    log: string[];
   };
   log: string[];
 };
@@ -158,6 +159,7 @@ export function GameCanvas() {
             monsters: s.combat.combatants
               .filter((k) => k.side === "monster")
               .map((k) => ({ name: k.name, hp: k.hp, maxHp: k.maxHp })),
+            log: s.combat.log,
           }
         : undefined,
       log: s.log,
@@ -456,6 +458,11 @@ export function GameCanvas() {
                 </li>
               ))}
             </ul>
+            <div className="mt-2 max-h-24 overflow-y-auto rounded border border-red-200 bg-white/60 p-2 text-xs text-neutral-700">
+              {hud.combat.log.slice(-6).map((line, i) => (
+                <div key={i}>{line}</div>
+              ))}
+            </div>
             <p className="mt-2 text-xs text-neutral-500">
               Arrows: move / attack adjacent · F: flee
             </p>

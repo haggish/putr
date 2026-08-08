@@ -3,7 +3,7 @@
 
 import type { Direction, GameState } from "../types";
 import { DIRECTIONS } from "../types";
-import { isPassable } from "../world";
+import { isPassable, tileAt } from "../world";
 
 export interface StepResult {
   state: GameState;
@@ -28,10 +28,20 @@ export function step(state: GameState, dir: Direction): StepResult {
     };
   }
 
+  // Announce crossing into a new, named district (overworld only — interior
+  // tiles carry no district).
+  const fromDistrict = tileAt(state.currentMap, state.party.position)?.district;
+  const toDistrict = tileAt(state.currentMap, target)?.district;
+  const log =
+    toDistrict && toDistrict !== fromDistrict
+      ? [...state.log, `You cross into ${toDistrict}.`].slice(-8)
+      : state.log;
+
   return {
     state: {
       ...state,
       party: { ...state.party, position: target, facing: dir },
+      log,
     },
     moved: true,
   };
