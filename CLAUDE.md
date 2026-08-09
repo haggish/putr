@@ -34,7 +34,7 @@ The frontend and backend live in one codebase. There is no separate API layer fo
 
 When adding a feature, follow this shape: Zod schema → Server Action with `revalidatePath` → Server Component reads from Prisma → thin Client Component only where interactivity is needed.
 
-**Prisma:** always import the singleton from `@/lib/prisma` (`lib/prisma.ts` guards against multiple clients on hot-reload). After editing `prisma/schema.prisma`, run `npm run db:migrate` and regenerate the client. The only model is `Note` — replace it with real domain models.
+**Prisma:** always import the singleton from `@/lib/prisma` (`lib/prisma.ts` guards against multiple clients on hot-reload). After editing `prisma/schema.prisma`, run `npm run db:migrate` and regenerate the client. The schema holds the game domain models (`World`, `District`, `Location`, `Player`, `Party`, `Character`, `Gear`, `CharacterGear`, `PlayerSession`); the starter's `Note` model is kept only for the `/notes` demo.
 
 **Auth (opt-in, currently inactive):** `auth.ts` exports `{ handlers, auth, signIn, signOut }` from NextAuth with the GitHub provider and JWT sessions (no DB adapter). `app/api/auth/[...nextauth]/route.ts` wires the handlers. `app/dashboard/page.tsx` is the protected-page example — it calls `await auth()` and gates on `session?.user`. Auth stays dormant until `AUTH_SECRET` and provider credentials are set in `.env`; the base app runs without it.
 
