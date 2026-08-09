@@ -29,7 +29,28 @@ Public-transit stations and lines will come from **VBB/BVG open data** (GTFS).
   - [ ] Exact required attribution string
   - [ ] Dataset name, source URL, and download date
 
-## 3. Intellectual-property stance
+## 3. Restaurant & dining data (Berlin Food Stories, Michelin)
+
+The restaurant layer inside the Ring is curated from two third-party sources, and
+neither carries a confirmed open license — **treat this as a licensing TODO before
+any public distribution or hosting.**
+
+- **Berlin Food Stories** — restaurant **names, coordinates, cuisine tags, price
+  levels (€–€€€€€), and signature-dish ("Eats") lists** were extracted from the
+  Berlin Food Stories map (`berlinfoodstories.com/map`). Editorial/curatorial
+  content owned by its authors; **no open data license**. Used here as factual
+  reference for a non-commercial homage. Committed data: `world/bfs-places.json`
+  (re-derivable via `world/build/extract-bfs.mjs` from a fresh dump).
+- **Michelin** — **which restaurants hold 1–3 stars** (2026 guide) was taken from
+  public reporting. Star ratings are facts, but the Michelin Guide is proprietary;
+  the ★ markers are informational only.
+- Real-world restaurant **names** are used nominatively to place real venues on a
+  map of the real city; the game claims no affiliation or endorsement.
+- **TODO before distribution:** confirm whether this reuse is permissible (or
+  replace with an openly-licensed / self-authored dataset), and add the required
+  attribution.
+
+## 4. Intellectual-property stance
 
 This project is an original homage, not a copy.
 
@@ -59,5 +80,8 @@ source and license. No un-logged assets.
 | Asset / dataset | Source | License | Attribution string |
 | --- | --- | --- | --- |
 | Overworld world asset | OpenStreetMap | ODbL 1.0 | © OpenStreetMap contributors |
-| _(pixel-art tileset)_ | _TODO_ | _TODO_ | _TODO_ |
+| Pixel-art tiles / sprites / icons | Original (this project) | Project-owned | — |
+| Procedural audio (SFX + music) | Original (synthesized, no samples) | Project-owned | — |
+| Restaurant data (cuisine/dishes/price) | Berlin Food Stories | **TODO — no open license** | _TODO_ |
+| Michelin star ratings | Michelin Guide (public reporting) | **TODO — facts, guide proprietary** | _TODO_ |
 | _(transit data)_ | VBB/BVG | _TODO_ | _TODO_ |

@@ -11,9 +11,10 @@ realtime code ships yet.
 - **Player** — an account. Linked to a **NextAuth** identity by `email`
   (GitHub etc.); `image`/`name` mirror the provider. A single `id: "local"`
   Player is the fallback slot when auth is dormant (the default in this repo).
-- **Party** — a player's adventuring group *and* their save game (position,
-  gold, roster in `flags`). **`@@unique([playerId, worldId])`** — one save per
-  player per world is the ownership key.
+- **Party** — a player's adventuring group *and* their save game: position and
+  gold are columns; the `flags` JSON holds the roster, inventory, and the
+  bit-packed fog-of-war exploration grid. **`@@unique([playerId, worldId])`** —
+  one save per player per world is the ownership key.
 - **PlayerSession** — presence: which player is in which world, their party, and
   their last-known `mapId`/`tileX`/`tileY` + `lastSeenAt`. One per
   `(playerId, worldId)`. A realtime layer renders other parties from these rows.

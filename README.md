@@ -18,18 +18,34 @@ world/save data lives in Postgres via Prisma.
 ## What's in it
 
 - **Real Berlin overworld** — a 324×229 tile map (~40 m/tile) inside the Ring,
-  from OSM: water, parks, streets, 90 districts, 600 placed venues.
+  from OSM: water, parks, streets, 90 districts, ~760 placed venues. Each venue
+  type has its own pixel icon, and famous landmarks (Fernsehturm, Brandenburger
+  Tor, Siegessäule, Reichstag, Berliner Dom) their own.
 - **Party & RPG** — create a party (race/class/point-buy stats) or use the
   default four; HP, gear you buy and equip, XP and leveling.
 - **Explore & interact** — enter venues into interior sub-maps; shop (buy/sell/
-  equip); talk to AI-driven keepers (Claude API).
+  equip); talk to AI-driven keepers (Claude API) who know their trade, district,
+  and — for restaurants — their real cuisine and dishes.
+- **Real restaurants** — the restaurant layer is Berlin Food Stories' recommended
+  places (inside the Ring), each with its actual cuisine, a €–€€€€€ price level,
+  and a menu of its signature dishes. **Michelin-starred** spots carry a ★ marker.
 - **Combat** — ~10% random encounters on streets/parks → turn-based tile arena
-  vs. drug addicts, thieves, wild boars, and exotic foes; loot + XP on victory.
+  vs. drug addicts, thieves, wild boars, and exotic foes; a scrolling combat feed,
+  short hit/death/victory animations, loot + XP on victory.
 - **Transit** — 121 U-/S-Bahn stations; stand on one to fast-travel.
 - **Night-club dungeons** — a maze interior with a boss (the Techno Titan) and
-  loot.
+  loot (the Neon Blade).
+- **Explored-world map** — press **M** for a fog-of-war overview; walked tiles are
+  revealed, with a couple of zoom levels. Exploration persists in the save.
+- **Procedural audio** — chiptune SFX and scene-based background music (overworld,
+  shop, Späti, combat, club), all synthesized (no asset files).
+- **Keyboard-first** — a full contextual key layer with an on-screen hint bar;
+  every action also has a sidebar button.
 - **Save/resume** — persisted to Postgres; multiplayer-ready (auth-linked
   ownership, presence), realtime deferred.
+
+**No overarching goal/quest exists yet** — it's a sandbox. See
+[`docs/PLAYING.md`](docs/PLAYING.md) for how to play.
 
 | Layer        | Choice                                             |
 | ------------ | -------------------------------------------------- |
@@ -74,7 +90,7 @@ postgresql://postgres:postgres@localhost:5432/app_dev?schema=public
 ```bash
 npm install               # postinstall runs prisma generate
 npm run db:migrate        # apply migrations (game domain model)
-npm run db:seed:world     # seed World + 90 districts + 600 locations from the asset
+npm run db:seed:world     # seed World + 90 districts + ~760 locations from the asset
 ```
 
 The generated world asset is committed at
@@ -91,9 +107,11 @@ npm run dev
 Open **<http://localhost:3000/play>**. (Or `/play/create` to roll a custom
 party.)
 
-**Controls:** arrow keys / WASD to move · **Enter** on a gold venue to go
-inside · **F** to flee combat · buttons in the side panel for shop, equip, talk,
-travel, and save.
+**Controls (quick):** arrow keys / WASD to move · **Enter** on a gold venue to go
+inside · **T** to talk to a keeper · **1–9** to buy/board/select · **M** for the
+explored-world map · **F** to flee combat. Every action also has a sidebar
+button, and a **Keys** hint bar shows the current context. Full guide:
+[`docs/PLAYING.md`](docs/PLAYING.md).
 
 ### 5. (Optional) Bring the AI NPCs to life
 
@@ -130,22 +148,27 @@ a cheaper/faster keeper.
 ```
 game/                 engine (pure core + canvas/controller adapters)
   ARCHITECTURE.md
+  renderer/tiles.ts   original pixel tiles, venue/landmark icons, sprites
 world/
   lib/projection.mjs  lat/lon -> tile grid
   build/*.mjs         fetch (OSM/Overpass) + rasterize -> asset
+  build/extract-bfs.mjs, add-bfs.mjs, add-michelin.mjs   curated venue overlays
+  bfs-places.json     curated Berlin Food Stories restaurant data
 public/world/berlin-overworld.json   committed overworld asset
 app/play/
   page.tsx            /play route
   create/page.tsx     character creation
-  game-canvas.tsx     client: canvas + HUD
+  game-canvas.tsx     client: canvas + HUD + keyboard layer + map overlay
+  sfx.ts, music.ts    synthesized sound effects + background music
+  explored.ts         fog-of-war save (de)serialization
   actions.ts          save/load (Server Actions)
   npc-actions.ts      AI NPC dialogue (Claude, server-side)
 prisma/
   schema.prisma       World/District/Location/Player/Party/Character/... 
   seed-world.ts       world seed (npm run db:seed:world)
-docs/                 ATTRIBUTION.md, MULTIPLAYER.md
+docs/                 PLAYING.md, ATTRIBUTION.md, MULTIPLAYER.md
 tests/                Vitest (movement, interiors, shop, party, xp, combat,
-                      transit, dungeon, tiles, npc, ...)
+                      transit, dungeon, tiles, npc, explored, ...)
 ```
 
 ## Common commands
@@ -168,6 +191,11 @@ npm run db:studio      # visual DB browser
 - **All art is original** (hand-authored pixel tiles); no Ultima/Origin/EA
   assets are used. "Ultima"/"Exodus" are referenced only nominatively.
 - Transit data is currently OSM (ODbL); a VBB/BVG GTFS license TODO is tracked.
+- **Restaurant data** (names, cuisine, dishes, price levels) is derived from the
+  **Berlin Food Stories** map, and **Michelin** star ratings from the guide —
+  both third-party, curatorial sources **without a confirmed open license**.
+  Treat this as a licensing TODO before any public distribution (see
+  `docs/ATTRIBUTION.md`).
 
 Full details and the asset registry: [`docs/ATTRIBUTION.md`](docs/ATTRIBUTION.md).
 
