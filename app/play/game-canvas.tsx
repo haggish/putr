@@ -90,6 +90,11 @@ export function GameCanvas() {
   const packSelRef = useRef(0);
   const talkingRef = useRef(false);
   const allStationsRef = useRef<Station[]>([]);
+  // Fog-of-war exploration (overworld) + map-overlay view state.
+  const exploredRef = useRef<Uint8Array | null>(null);
+  const mapOpenRef = useRef(false);
+  const mapZoomRef = useRef(1);
+  const mapPanRef = useRef({ x: 0, y: 0 });
   const animRef = useRef({
     prev: new Map<string, number>(),
     hits: new Map<string, number>(),
@@ -109,11 +114,27 @@ export function GameCanvas() {
   const [allStations, setAllStations] = useState<Station[]>([]);
   const [muted, setMuted] = useState(false);
   const [musicOff, setMusicOff] = useState(false);
+  const [mapOpen, setMapOpen] = useState(false);
 
   const refresh = useCallback(() => {
     const c = controllerRef.current;
     if (!c) return;
     const s = c.getState();
+    // Reveal the area around the party on the overworld (fog of war).
+    if (s.mode === "overworld" && exploredRef.current) {
+      const m = s.currentMap;
+      const ex = exploredRef.current;
+      const { x, y } = s.party.position;
+      const R = 5;
+      for (let dy = -R; dy <= R; dy++) {
+        for (let dx = -R; dx <= R; dx++) {
+          const nx = x + dx;
+          const ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= m.width || ny >= m.height) continue;
+          ex[ny * m.width + nx] = 1;
+        }
+      }
+    }
     // A rise in gold means a sale or combat loot — ring the coin.
     if (s.party.gold > prevGoldRef.current) sfxRef.current?.gold();
     prevGoldRef.current = s.party.gold;
@@ -206,6 +227,8 @@ export function GameCanvas() {
       controllerRef.current = controller;
       // Seed the gold baseline so loading a save doesn't ring the coin.
       prevGoldRef.current = controller.getState().party.gold;
+      const m0 = controller.getState().currentMap;
+      exploredRef.current = new Uint8Array(m0.width * m0.height);
       controller.render();
       refresh();
     };
@@ -287,6 +310,69 @@ export function GameCanvas() {
       if (!anim.raf) anim.raf = requestAnimationFrame(loop);
     };
 
+    // Explored-world map overlay (opened with M on the overworld).
+    const MAP_ZOOMS = [2, 4, 8]; // px per tile
+    const drawMap = () => {
+      const c = controllerRef.current;
+      const r = rendererRef.current;
+      const ex = exploredRef.current;
+      if (!c || !r || !ex) return;
+      const s = c.getState();
+      const px = MAP_ZOOMS[mapZoomRef.current] ?? 4;
+      const center = {
+        x: s.party.position.x + mapPanRef.current.x,
+        y: s.party.position.y + mapPanRef.current.y,
+      };
+      r.renderMap(s, ex, px, center);
+    };
+    const openMap = () => {
+      mapOpenRef.current = true;
+      mapPanRef.current = { x: 0, y: 0 };
+      setMapOpen(true);
+      drawMap();
+    };
+    const closeMap = () => {
+      mapOpenRef.current = false;
+      setMapOpen(false);
+      controllerRef.current?.render();
+    };
+    // Handle keys while the map is open (pan / zoom / close). Returns true if
+    // the map is open (so it swallows the key).
+    const mapKey = (key: string): boolean => {
+      if (!mapOpenRef.current) return false;
+      if (key === "Escape" || key === "m" || key === "M") {
+        closeMap();
+        return true;
+      }
+      let dx = 0;
+      let dy = 0;
+      if (key === "ArrowLeft" || key === "a" || key === "A") dx = -1;
+      else if (key === "ArrowRight" || key === "d" || key === "D") dx = 1;
+      else if (key === "ArrowUp" || key === "w" || key === "W") dy = -1;
+      else if (key === "ArrowDown" || key === "s" || key === "S") dy = 1;
+      if (dx || dy) {
+        const step = Math.max(4, Math.round(32 / MAP_ZOOMS[mapZoomRef.current]));
+        mapPanRef.current = {
+          x: mapPanRef.current.x + dx * step,
+          y: mapPanRef.current.y + dy * step,
+        };
+        drawMap();
+        return true;
+      }
+      if (key === "z" || key === "Z" || key === "+" || key === "=") {
+        mapZoomRef.current = (mapZoomRef.current + 1) % MAP_ZOOMS.length;
+        drawMap();
+        return true;
+      }
+      if (key === "-" || key === "_") {
+        mapZoomRef.current =
+          (mapZoomRef.current - 1 + MAP_ZOOMS.length) % MAP_ZOOMS.length;
+        drawMap();
+        return true;
+      }
+      return true; // swallow anything else while the map is up
+    };
+
     // Keyboard layer for the sidebar. Returns true when it consumes the key
     // (so it doesn't also move the party). Reads game data live from the
     // controller and UI selection from refs, so nothing is stale.
@@ -295,15 +381,8 @@ export function GameCanvas() {
       if (!c) return false;
       const s = c.getState();
 
-      // Audio toggles work anywhere.
-      if (key === "m" || key === "M") {
-        setMusicOff((v) => {
-          const nv = !v;
-          musicRef.current?.setEnabled(!nv);
-          return nv;
-        });
-        return true;
-      }
+      // Sound toggle works anywhere (music is on M-free: it's a button; the map
+      // owns M now).
       if (key === "v" || key === "V") {
         setMuted((v) => {
           const nv = !v;
@@ -405,6 +484,19 @@ export function GameCanvas() {
       const controller = controllerRef.current;
       if (!controller) return;
       music.resume(); // unlock/start audio on the first gesture
+      // Map overlay swallows keys while open; M opens it on the overworld.
+      if (mapKey(e.key)) {
+        e.preventDefault();
+        return;
+      }
+      if (
+        (e.key === "m" || e.key === "M") &&
+        controller.getState().mode === "overworld"
+      ) {
+        openMap();
+        e.preventDefault();
+        return;
+      }
       if (sidebarKey(e.key)) {
         e.preventDefault();
         return;
@@ -546,17 +638,19 @@ export function GameCanvas() {
     hud && hud.inventory.length ? Math.min(packSel, hud.inventory.length - 1) : 0;
 
   // Context-sensitive key hints shown at the top of the sidebar.
-  const keyHints = hud?.combat
-    ? "Arrows / WASD: attack or move a hero · F: flee"
-    : talking
-      ? "Type your message · Enter: send · Esc: leave"
-      : hud?.onStation
-        ? "1–9: board that train · step off the platform to cancel"
-        : inShop
-          ? "1–9: buy · [ ]: pick pack item · G: equip · X: sell · C: switch hero · T: talk · Enter: leave"
-          : hud?.locationName
-            ? "T: talk to the keeper · Enter: step outside"
-            : "Move: WASD / arrows · Enter: enter a place · 1–N: pick hero · [ ] pack · G: equip · M/V: music/sound";
+  const keyHints = mapOpen
+    ? "Map — arrows: pan · Z: zoom · M / Esc: close"
+    : hud?.combat
+      ? "Arrows / WASD: attack or move a hero · F: flee"
+      : talking
+        ? "Type your message · Enter: send · Esc: leave"
+        : hud?.onStation
+          ? "1–9: board that train · step off the platform to cancel"
+          : inShop
+            ? "1–9: buy · [ ]: pick pack item · G: equip · X: sell · C: switch hero · T: talk · Enter: leave"
+            : hud?.locationName
+              ? "T: talk to the keeper · Enter: step outside"
+              : "Move: WASD / arrows · Enter: enter place · 1–N: hero · [ ] pack · G: equip · M: map · V: sound";
 
   return (
     <div className="game-screen flex flex-col gap-4 lg:flex-row">

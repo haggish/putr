@@ -121,6 +121,64 @@ export class CanvasRenderer {
     return this.viewTiles * this.tileSize;
   }
 
+  /** Draw the explored-world overview (fog of war). `explored` is a
+   *  width*height flag array over the overworld; unexplored tiles stay black.
+   *  `center` is the tile the view centers on; `pxPerTile` is the zoom. */
+  renderMap(
+    state: GameState,
+    explored: Uint8Array,
+    pxPerTile: number,
+    center: { x: number; y: number },
+  ): void {
+    const ctx = this.ctx;
+    const size = this.pixelSize;
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, size, size);
+
+    const map = state.currentMap;
+    const across = Math.ceil(size / pxPerTile);
+    const ox = center.x - Math.floor(across / 2);
+    const oy = center.y - Math.floor(across / 2);
+
+    for (let vy = 0; vy < across; vy++) {
+      for (let vx = 0; vx < across; vx++) {
+        const mx = ox + vx;
+        const my = oy + vy;
+        if (mx < 0 || my < 0 || mx >= map.width || my >= map.height) continue;
+        const idx = my * map.width + mx;
+        if (!explored[idx]) continue;
+        const t = map.tiles[idx];
+        if (!t) continue;
+        ctx.fillStyle = t.venueStars
+          ? "#ffe14d" // starred restaurant — bright gold
+          : t.kind === "venue"
+            ? "#d8b64a"
+            : TILE_COLORS[t.kind];
+        ctx.fillRect(vx * pxPerTile, vy * pxPerTile, pxPerTile, pxPerTile);
+      }
+    }
+
+    // Party marker — fixed size so it's always findable.
+    const cx = Math.round((state.party.position.x - ox + 0.5) * pxPerTile);
+    const cy = Math.round((state.party.position.y - oy + 0.5) * pxPerTile);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(cx - 3, cy - 3, 6, 6);
+    ctx.fillStyle = "#e8483a";
+    ctx.fillRect(cx - 2, cy - 2, 4, 4);
+
+    // Caption.
+    ctx.fillStyle = "rgba(0,0,0,0.55)";
+    ctx.fillRect(0, 0, size, 13);
+    ctx.fillStyle = "#e8e8e8";
+    ctx.font = "9px monospace";
+    ctx.textBaseline = "top";
+    ctx.fillText(
+      `MAP · ${pxPerTile}px/tile · arrows pan · Z zoom · M/Esc close`,
+      3,
+      2,
+    );
+  }
+
   render(state: GameState, fx?: CombatFx): void {
     if (state.combat) return this.renderCombat(state, fx);
     const { currentMap: map, party } = state;
