@@ -231,3 +231,39 @@ export function unequip(
     message,
   };
 }
+
+/** Eat consumable pack item `invIndex` to heal member `memberIndex`. Healing
+ *  scales with the item's price (~1 HP per 3 gold) and is capped at maxHp — so
+ *  cheap street food is a snack and a pricey dish is a real heal; the item is
+ *  only spent if it actually heals. */
+export function consume(
+  state: GameState,
+  memberIndex: number,
+  invIndex: number,
+): PartyResult {
+  const member = state.party.members[memberIndex];
+  const item = state.party.inventory[invIndex];
+  if (!member || !item) return { state, ok: false, message: "" };
+  if (item.kind !== "consumable") {
+    return { state, ok: false, message: `${item.name} can't be eaten.` };
+  }
+  if (member.hp >= member.maxHp) {
+    return { state, ok: false, message: `${member.name} is already at full HP.` };
+  }
+  const heal = Math.max(1, Math.round(item.value / 3));
+  const hp = Math.min(member.maxHp, member.hp + heal);
+  const gained = hp - member.hp;
+
+  const inventory = [...state.party.inventory];
+  if (item.qty > 1) inventory[invIndex] = { ...item, qty: item.qty - 1 };
+  else inventory.splice(invIndex, 1);
+  const members = state.party.members.map((m, i) =>
+    i === memberIndex ? { ...m, hp } : m,
+  );
+  const message = `${member.name} eats ${item.name} (+${gained} HP).`;
+  return {
+    state: { ...state, party: { ...state.party, inventory, members }, log: [...state.log, message].slice(-8) },
+    ok: true,
+    message,
+  };
+}

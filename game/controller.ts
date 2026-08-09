@@ -9,7 +9,11 @@ import { keyToDirection } from "./input";
 import { step } from "./systems/movement";
 import { clearDungeon, enterInterior, exitInterior } from "./systems/interior";
 import { buyItem, sellItem, menuFor } from "./systems/shop";
-import { equip as equipMember, unequip as unequipMember } from "./systems/party";
+import {
+  equip as equipMember,
+  unequip as unequipMember,
+  consume as consumeMember,
+} from "./systems/party";
 import { combatAct, fleeCombat, resolveCombat, startCombat } from "./systems/combat";
 import { clubBoss, clubEncounter, rollEncounter } from "./systems/monsters";
 import { tileAt } from "./world";
@@ -161,6 +165,14 @@ export class GameController {
   unequip(memberIndex: number, slot: EquipSlot): boolean {
     const r = unequipMember(this.state, memberIndex, slot);
     this.state = r.state;
+    return r.ok;
+  }
+
+  /** Eat consumable pack item `invIndex` to heal member `memberIndex`. */
+  consume(memberIndex: number, invIndex: number): boolean {
+    const r = consumeMember(this.state, memberIndex, invIndex);
+    this.state = r.state;
+    if (r.ok) this.render();
     return r.ok;
   }
 

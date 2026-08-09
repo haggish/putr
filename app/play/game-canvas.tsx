@@ -453,6 +453,14 @@ export function GameCanvas() {
           refresh();
           return true;
         }
+        if (key === "h" || key === "H") {
+          controllerRef.current?.consume(
+            selectedRef.current,
+            Math.min(packSelRef.current, inv.length - 1),
+          );
+          refresh();
+          return true;
+        }
         if ((key === "x" || key === "X") && inShopNow) {
           controllerRef.current?.sell(Math.min(packSelRef.current, inv.length - 1));
           refresh();
@@ -582,6 +590,10 @@ export function GameCanvas() {
     controllerRef.current?.equip(selected, i);
     refresh();
   };
+  const doEat = (i: number) => {
+    controllerRef.current?.consume(selected, i);
+    refresh();
+  };
   const doUnequip = (member: number, slot: "weapon" | "armor") => {
     controllerRef.current?.unequip(member, slot);
     refresh();
@@ -662,10 +674,10 @@ export function GameCanvas() {
         : hud?.onStation
           ? "1–9: board that train · step off the platform to cancel"
           : inShop
-            ? "1–9: buy · [ ]: pick pack item · G: equip · X: sell · C: switch hero · T: talk · Enter: leave"
+            ? "1–9: buy · [ ]: pick · G: equip · H: eat · X: sell · C: switch hero · T: talk · Enter: leave"
             : hud?.locationName
               ? "T: talk to the keeper · Enter: step outside"
-              : "Move: WASD / arrows · Enter: enter place · 1–N: hero · [ ] pack · G: equip · M: map · V: sound";
+              : "Move: WASD / arrows · Enter: enter place · 1–N: hero · [ ] pack · G: equip · H: eat · M: map · V: sound";
 
   return (
     <div className="game-screen flex flex-col gap-4 lg:flex-row">
@@ -1038,7 +1050,7 @@ export function GameCanvas() {
             <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
               Pack{" "}
               <span className="normal-case text-neutral-400">
-                ([ ] pick · G: equip → {hud.members[selected]?.name}
+                ([ ] pick · G: equip · H: eat → {hud.members[selected]?.name}
                 {inShop ? " · X: sell" : ""})
               </span>
             </div>
@@ -1058,6 +1070,15 @@ export function GameCanvas() {
                     {it.name} ×{it.qty}
                   </span>
                   <span className="flex gap-1">
+                    {it.kind === "consumable" && (
+                      <button
+                        type="button"
+                        onClick={() => doEat(i)}
+                        className="rounded border border-neutral-300 px-2 py-0.5 text-xs hover:bg-neutral-100"
+                      >
+                        Eat
+                      </button>
+                    )}
                     {EQUIPPABLE.has(it.kind) && (
                       <button
                         type="button"
