@@ -153,6 +153,12 @@ export interface GameState {
   locationCategory?: string;
   /** District of the venue currently inside (flavours the keeper's persona). */
   locationDistrict?: string;
+  /** Cuisine of the venue currently inside (restaurants). */
+  locationCuisine?: string[];
+  /** Price level 1–5 of the venue currently inside. */
+  locationPrice?: number;
+  /** Signature dishes of the venue currently inside — its shop menu. */
+  locationEats?: string[];
   /** Where to restore to when leaving an interior. */
   returnTo?: { map: GameMap; position: Vec2; mode: GameMode };
   /** Present when the current interior is a night-club dungeon. */

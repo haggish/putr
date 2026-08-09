@@ -8,7 +8,7 @@ import {
   characterAttack,
   characterDefense,
   npcPersona,
-  shopCatalogFor,
+  menuFor,
   stateFromAsset,
   stationList,
   stationMap,
@@ -51,6 +51,8 @@ type Hud = {
   district?: string;
   place?: VenueInfo | null;
   locationName?: string;
+  cuisine?: string[];
+  price?: number;
   onStation?: Station | null;
   gold: number;
   shop: ShopItem[];
@@ -162,8 +164,10 @@ export function GameCanvas() {
           ? (stationByXYRef.current.get(`${x},${y}`) ?? null)
           : null,
       locationName: s.locationName,
+      cuisine: s.locationCuisine,
+      price: s.locationPrice,
       gold: s.party.gold,
-      shop: shopCatalogFor(s.locationCategory),
+      shop: menuFor(s),
       inventory: s.party.inventory,
       members: s.party.members.map((m) => ({
         name: m.name,
@@ -421,7 +425,7 @@ export function GameCanvas() {
       }
 
       const inv = s.party.inventory;
-      const catalog = shopCatalogFor(s.locationCategory);
+      const catalog = menuFor(s);
       const inShopNow = !!s.locationName && catalog.length > 0;
       const { x, y } = s.party.position;
       const tile = s.currentMap.tiles[y * s.currentMap.width + x];
@@ -629,6 +633,8 @@ export function GameCanvas() {
       category: s?.locationCategory ?? "OTHER",
       venueName: s?.locationName ?? "this place",
       district: s?.locationDistrict,
+      cuisine: s?.locationCuisine,
+      dishes: s?.locationEats,
       history,
       message: text,
     });
@@ -792,7 +798,13 @@ export function GameCanvas() {
                         {"★".repeat(hud.place.stars)}
                       </span>
                     ) : null}{" "}
-                    ({hud.place.category.toLowerCase()}) — press Enter
+                    ({hud.place.cuisine?.length
+                      ? hud.place.cuisine.join("/")
+                      : hud.place.category.toLowerCase()}
+                    {hud.place.priceLevel
+                      ? ` · ${"€".repeat(hud.place.priceLevel)}`
+                      : ""}
+                    ) — press Enter
                   </li>
                 ) : null}
               </ul>
@@ -874,6 +886,17 @@ export function GameCanvas() {
             <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-700">
               Shop — {hud.locationName}
             </div>
+            {hud.cuisine?.length || hud.price ? (
+              <p className="mb-1 text-xs text-neutral-600">
+                {hud.cuisine?.length ? hud.cuisine.join("/") : null}
+                {hud.price ? (
+                  <span className="text-amber-700">
+                    {hud.cuisine?.length ? " · " : ""}
+                    {"€".repeat(hud.price)}
+                  </span>
+                ) : null}
+              </p>
+            ) : null}
             <p className="mb-1 text-xs text-neutral-500">Press 1–9 to buy.</p>
             <ul className="space-y-1 text-neutral-700">
               {hud.shop.map((item, i) => (

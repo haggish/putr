@@ -80,6 +80,9 @@ export function npcPersona(input: {
   venueName: string;
   /** District name, folded into the prompt when known. */
   district?: string;
+  /** Cuisine tags + signature dishes (restaurants), so the cook talks real food. */
+  cuisine?: string[];
+  dishes?: string[];
   id?: string;
 }): { keeperName: string; systemPrompt: string } {
   const p = personaFor(input.category, input.venueName);
@@ -95,6 +98,11 @@ export function npcPersona(input: {
       ? `Neighbourhood: ${input.district} — let its character colour how you speak and what you mention.`
       : "",
     `Personality: ${p.trait}.`,
+    input.dishes?.length
+      ? `You serve ${input.cuisine?.length ? input.cuisine.join("/") + " " : ""}food; the dishes you are proud of are ${input.dishes.join(", ")}. Recommend these real dishes if asked — do not invent a fancy tasting menu.`
+      : input.cuisine?.length
+        ? `You serve ${input.cuisine.join("/")} food.`
+        : "",
     `Stay fully in character as a Berliner running this place; the player is a wandering adventurer who just walked in.`,
     `Reply ONLY with what ${keeperName} says out loud — 1 to 3 short sentences. No narration, no stage directions, no asterisks, no markdown. Never break character or mention being an AI.`,
   ]

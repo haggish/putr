@@ -21,6 +21,8 @@ export async function npcReply(input: {
   category: string;
   venueName: string;
   district?: string;
+  cuisine?: string[];
+  dishes?: string[];
   id?: string;
   history: NpcTurn[];
   message: string;
@@ -38,6 +40,8 @@ export async function npcReply(input: {
     category: input.category,
     venueName: input.venueName,
     district: input.district,
+    cuisine: input.cuisine,
+    dishes: input.dishes,
     id: input.id,
   });
   const history = input.history

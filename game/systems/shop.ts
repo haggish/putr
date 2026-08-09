@@ -56,6 +56,38 @@ export function shopCatalogFor(category?: string): ShopItem[] {
   return category ? (CATALOGS[category] ?? []) : [];
 }
 
+// Gold price band per price level (1–5, €–€€€€€). A restaurant's dishes are
+// spread across its band so cheaper/pricier items sit at the right level.
+const PRICE_BANDS: Record<number, [number, number]> = {
+  1: [4, 7],
+  2: [7, 12],
+  3: [14, 22],
+  4: [28, 48],
+  5: [55, 95],
+};
+
+/** The buy menu for the venue you're inside. Restaurants sell their real
+ *  "Eats" dishes, priced by their price level; other shops use the category
+ *  catalog. A restaurant with no dish data has no menu (just the cook). */
+export function menuFor(loc: {
+  locationCategory?: string;
+  locationEats?: string[];
+  locationPrice?: number;
+}): ShopItem[] {
+  if (loc.locationCategory === "RESTAURANT") {
+    const eats = loc.locationEats ?? [];
+    if (!eats.length) return [];
+    const [lo, hi] = PRICE_BANDS[loc.locationPrice ?? 2] ?? PRICE_BANDS[2];
+    return eats.map((dish, i) => ({
+      id: `dish-${i}`,
+      name: dish,
+      price: Math.round(eats.length > 1 ? lo + ((hi - lo) * i) / (eats.length - 1) : (lo + hi) / 2),
+      kind: "consumable" as const,
+    }));
+  }
+  return shopCatalogFor(loc.locationCategory);
+}
+
 export interface ShopResult {
   state: GameState;
   ok: boolean;

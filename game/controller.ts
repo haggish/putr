@@ -8,7 +8,7 @@ import { createInitialState } from "./state";
 import { keyToDirection } from "./input";
 import { step } from "./systems/movement";
 import { clearDungeon, enterInterior, exitInterior } from "./systems/interior";
-import { buyItem, sellItem, shopCatalogFor } from "./systems/shop";
+import { buyItem, sellItem, menuFor } from "./systems/shop";
 import { equip as equipMember, unequip as unequipMember } from "./systems/party";
 import { combatAct, fleeCombat, resolveCombat, startCombat } from "./systems/combat";
 import { clubBoss, clubEncounter, rollEncounter } from "./systems/monsters";
@@ -136,9 +136,7 @@ export class GameController {
 
   /** Buy a catalog item in the current shop; returns true on success. */
   buy(itemId: string): boolean {
-    const item = shopCatalogFor(this.state.locationCategory).find(
-      (i) => i.id === itemId,
-    );
+    const item = menuFor(this.state).find((i) => i.id === itemId);
     if (!item) return false;
     const r = buyItem(this.state, item);
     this.state = r.state;

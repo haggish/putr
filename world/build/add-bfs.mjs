@@ -70,7 +70,16 @@ for (const p of places) {
   let n = 2;
   while (usedIds.has(id)) id = `bfs/${slugify(p.slug || p.name)}-${n++}`;
   usedIds.add(id);
-  asset.venues.push({ id, name: p.name, category: "RESTAURANT", x: spot.x, y: spot.y });
+  asset.venues.push({
+    id,
+    name: p.name,
+    category: "RESTAURANT",
+    x: spot.x,
+    y: spot.y,
+    ...(p.cuisine?.length ? { cuisine: p.cuisine } : {}),
+    ...(p.price ? { priceLevel: p.price } : {}),
+    ...(p.eats?.length ? { eats: p.eats } : {}),
+  });
   added++;
 }
 

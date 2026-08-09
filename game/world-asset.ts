@@ -14,6 +14,12 @@ export interface VenueInfo {
   y: number;
   /** Michelin star count (1–3), when the venue is a starred restaurant. */
   stars?: number;
+  /** Cuisine tags (restaurants), e.g. ["Thai"] or ["Lebanese","Syrian"]. */
+  cuisine?: string[];
+  /** Price level 1–5 (€–€€€€€). */
+  priceLevel?: number;
+  /** Signature dishes ("Eats") — the real menu the shop is built from. */
+  eats?: string[];
 }
 
 export interface Station {

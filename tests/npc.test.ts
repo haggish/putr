@@ -34,6 +34,21 @@ describe("npc personas", () => {
     expect(q.systemPrompt).not.toContain("Neighbourhood");
   });
 
+  it("tells a restaurant cook its real cuisine and dishes", () => {
+    const p = npcPersona({
+      category: "RESTAURANT",
+      venueName: "Thai Art",
+      cuisine: ["Thai"],
+      dishes: ["Tom Yum Soup", "Pad Thai"],
+    });
+    expect(p.systemPrompt).toContain("Thai");
+    expect(p.systemPrompt).toContain("Tom Yum Soup");
+    expect(p.systemPrompt).toContain("Pad Thai");
+    // Without dish data, no menu line is fabricated.
+    const q = npcPersona({ category: "RESTAURANT", venueName: "Somewhere" });
+    expect(q.systemPrompt).not.toContain("dishes you are proud of");
+  });
+
   it("applies a per-venue personality override, ignoring the category", () => {
     const berghain = npcPersona({ category: "NIGHTCLUB", venueName: "Berghain" });
     expect(berghain.systemPrompt).toContain("Nicht heute"); // bespoke, not the default bouncer
