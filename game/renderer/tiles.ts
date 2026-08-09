@@ -576,6 +576,27 @@ export const TILE_PATTERNS: Record<TileKind, TilePattern> = {
     ],
   },
   venue: VENUE_TILES.DEFAULT,
+  bridge: {
+    palette: { d: "#8a5a2a", D: "#5f3d1a", R: "#d8c8a0", w: "#2a4d69" },
+    rows: [
+      "wRRRRRRRRRRRRRRw",
+      "dddddddddddddddd",
+      "dDDDDDDDDDDDDDDd",
+      "dddddddddddddddd",
+      "dDDDDDDDDDDDDDDd",
+      "dddddddddddddddd",
+      "dDDDDDDDDDDDDDDd",
+      "dddddddddddddddd",
+      "dddddddddddddddd",
+      "dDDDDDDDDDDDDDDd",
+      "dddddddddddddddd",
+      "dDDDDDDDDDDDDDDd",
+      "dddddddddddddddd",
+      "dDDDDDDDDDDDDDDd",
+      "dddddddddddddddd",
+      "wRRRRRRRRRRRRRRw",
+    ],
+  },
   station: {
     palette: { "#": "#16306a", ".": "#2a4b9b", o: "#e6ecf5" },
     rows: [

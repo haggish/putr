@@ -25,6 +25,7 @@ export const TILE_COLORS: Record<TileKind, string> = {
   plaza: "#6d5a3f",
   venue: "#b08d2a",
   station: "#2a4b9b",
+  bridge: "#8a5a2a",
 };
 
 export interface RendererOptions {

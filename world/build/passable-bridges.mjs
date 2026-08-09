@@ -99,7 +99,7 @@ for (let iter = 0; iter < 500; iter++) {
   // Carve the water tiles along the path back to the spawn component.
   let cur = res.target, span = 0;
   while (cur !== -1) {
-    if (tiles[cur] === "w") { tiles[cur] = "."; carved++; span++; }
+    if (tiles[cur] === "w") { tiles[cur] = "="; carved++; span++; } // "=" = bridge
     cur = res.prev[cur];
   }
   bridges++;

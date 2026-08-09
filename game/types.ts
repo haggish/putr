@@ -21,7 +21,8 @@ export type TileKind =
   | "rail" // the Ring & tracks — impassable barrier
   | "plaza" // open squares — walkable
   | "venue" // enterable location marker — walkable, carries a locationId
-  | "station"; // U-/S-Bahn station — walkable, board here to fast-travel
+  | "station" // U-/S-Bahn station — walkable, board here to fast-travel
+  | "bridge"; // walkable crossing carved over water
 
 export interface Tile {
   kind: TileKind;

@@ -75,6 +75,7 @@ const LEGEND: [TileKind, string][] = [
   ["rail", "the Ring"],
   ["venue", "venue"],
   ["station", "station"],
+  ["bridge", "bridge"],
 ];
 
 const EQUIPPABLE = new Set(["weapon", "armor", "shield"]);

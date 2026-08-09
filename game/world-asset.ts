@@ -56,6 +56,7 @@ const CODE_TO_KIND: Record<string, TileKind> = {
   b: "building",
   z: "plaza",
   s: "station",
+  "=": "bridge",
 };
 
 export function mapFromAsset(asset: WorldAsset): GameMap {
