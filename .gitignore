@@ -56,3 +56,6 @@ world/tileset-preview.png
 
 # transient Berlin Food Stories map dump (re-extract via world/build/extract-bfs.mjs)
 dump.html
+
+# Generated Beads dependency graph
+BEADS_GRAPH.md
