@@ -15,6 +15,21 @@ import { project } from "../lib/projection.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const ASSET = join(here, "..", "..", "public", "world", "berlin-overworld.json");
+const BFS = JSON.parse(readFileSync(join(here, "..", "bfs-places.json"), "utf8"));
+// Curated dishes for starred places not in the BFS data (from public reviews).
+const DISHES = JSON.parse(readFileSync(join(here, "..", "michelin-dishes.json"), "utf8"));
+
+// Starred places overlap the Berlin Food Stories data (add-bfs skips them as
+// Michelin dupes) — reuse it so they get cuisine, a price level, and dishes.
+const normName = (s) =>
+  (s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]/g, "");
+const bfsByName = new Map(BFS.map((p) => [normName(p.name), p]));
+function bfsMatch(name) {
+  const k = normName(name);
+  if (bfsByName.has(k)) return bfsByName.get(k);
+  for (const [bk, bp] of bfsByName) if (bk.includes(k) || k.includes(bk)) return bp;
+  return null;
+}
 
 // [name, stars, lon, lat]
 const STARRED = [
@@ -79,7 +94,17 @@ for (const [name, stars, lon, lat] of STARRED) {
   taken.add(`${x},${y}`);
   // Replace any plain venue sitting exactly here so the star one is what shows.
   asset.venues = asset.venues.filter((v) => !(v.x === x && v.y === y));
-  asset.venues.push({ id: `michelin/${slug(name)}`, name, category: "RESTAURANT", x, y, stars });
+  // Prefer the BFS entry; fall back to the curated dish list for the rest.
+  const m = bfsMatch(name);
+  const d = DISHES[name];
+  const cuisine = m?.cuisine?.length ? m.cuisine : d?.cuisine;
+  const priceLevel = m?.price || d?.price;
+  const eats = m?.eats?.length ? m.eats : d?.eats;
+  const extra = {};
+  if (cuisine?.length) extra.cuisine = cuisine;
+  if (priceLevel) extra.priceLevel = priceLevel;
+  if (eats?.length) extra.eats = eats;
+  asset.venues.push({ id: `michelin/${slug(name)}`, name, category: "RESTAURANT", x, y, stars, ...extra });
   added++;
 }
 

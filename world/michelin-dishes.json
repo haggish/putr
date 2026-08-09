@@ -1,0 +1,14 @@
+{
+  "_source": "Signature dishes for starred restaurants absent from the Berlin Food Stories dump, drawn from public reviews / the MICHELIN Guide / visitBerlin (representative, menus change). See docs/ATTRIBUTION.md.",
+  "FACIL": { "cuisine": ["Fine Dining", "French"], "price": 5, "eats": ["Faroe Langoustine", "Arctic Char & Spreewald Cucumber", "Guinea Fowl Roulade", "Summer Mille-Feuille"] },
+  "Golvet": { "cuisine": ["Fine Dining"], "price": 5, "eats": ["Langoustine 'Annika Maria'", "John Dory & Kohlrabi", "Smoked Eel & Pointed Cabbage", "Aubergine, Café de Paris"] },
+  "Lorenz Adlon Esszimmer": { "cuisine": ["Fine Dining", "French"], "price": 5, "eats": ["Breton Lobster, Cauliflower & Truffle", "Atlantic Red Mullet"] },
+  "Hugos": { "cuisine": ["Fine Dining"], "price": 5, "eats": ["Schorfheide Venison", "Oldenburg Duck Terrine"] },
+  "Bonvivant": { "cuisine": ["Vegan", "Fine Dining"], "price": 5, "eats": ["Vegan Tasting Menu"] },
+  "Bricole": { "cuisine": ["Fine Dining", "French"], "price": 5, "eats": ["Aubergine Sous-Vide", "Nordic Halibut, Shiso & Dashi", "Guinea Fowl & Porcini", "Rhubarb & White Chocolate"] },
+  "Matthias": { "cuisine": ["Modern French", "Fine Dining"], "price": 5, "eats": ["Scallop, Carrot & Trout Caviar"] },
+  "Rutz": { "cuisine": ["Fine Dining", "New German"], "price": 5, "eats": ["Wagyu, Garum & Kohlrabi", "Yellowtail Mackerel & Tomato", "Trout, Spruce & Buttermilk", "Kohlrabi & Whey"] },
+  "Bandol sur mer": { "cuisine": ["Fine Dining", "French"], "price": 5, "eats": ["Foie Gras & Country Pâté", "Sourdough 'Larry' & Turnip Pesto", "Aubergine Pâté", "Fermented Carrot Charcuterie"] },
+  "Cookies Cream": { "cuisine": ["Vegetarian", "Fine Dining"], "price": 5, "eats": ["Roasted Pepper 'Tartare'", "Onsen Egg & Seaweed Caviar", "Oyster Mushroom, Potato & Saffron", "Carrot, Chard & Sea Buckthorn"] },
+  "Pars": { "cuisine": ["Fine Dining"], "price": 5, "eats": ["Smoked Eel & Beetroot", "Pike-Perch & Szegediner Kohl", "Celery & Langres"] }
+}

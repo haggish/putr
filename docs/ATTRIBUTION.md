@@ -44,6 +44,10 @@ any public distribution or hosting.**
 - **Michelin** — **which restaurants hold 1–3 stars** (2026 guide) was taken from
   public reporting. Star ratings are facts, but the Michelin Guide is proprietary;
   the ★ markers are informational only.
+- **Signature dishes for starred restaurants not in the BFS data**
+  (`world/michelin-dishes.json`) are representative dishes drawn from public
+  reviews / the MICHELIN Guide / visitBerlin (menus change; these are factual
+  descriptions, not reproductions of any menu).
 - Real-world restaurant **names** are used nominatively to place real venues on a
   map of the real city; the game claims no affiliation or endorsement.
 - **TODO before distribution:** confirm whether this reuse is permissible (or
@@ -84,4 +88,5 @@ source and license. No un-logged assets.
 | Procedural audio (SFX + music) | Original (synthesized, no samples) | Project-owned | — |
 | Restaurant data (cuisine/dishes/price) | Berlin Food Stories | **TODO — no open license** | _TODO_ |
 | Michelin star ratings | Michelin Guide (public reporting) | **TODO — facts, guide proprietary** | _TODO_ |
+| Starred-restaurant signature dishes | Public reviews / MICHELIN Guide / visitBerlin | Factual descriptions | _informational_ |
 | _(transit data)_ | VBB/BVG | _TODO_ | _TODO_ |
