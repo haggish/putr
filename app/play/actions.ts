@@ -17,6 +17,8 @@ export interface SaveSnapshot {
   gold: number;
   members: Character[];
   inventory: InventoryItem[];
+  /** Base64 bit-packed fog-of-war exploration grid (see app/play/explored.ts). */
+  explored?: string;
 }
 
 const WORLD_SLUG = "berlin-ring";
@@ -61,7 +63,11 @@ export async function saveParty(
   }
   const player = await resolvePlayer();
   const flags = JSON.parse(
-    JSON.stringify({ members: snap.members, inventory: snap.inventory }),
+    JSON.stringify({
+      members: snap.members,
+      inventory: snap.inventory,
+      explored: snap.explored,
+    }),
   );
   const fields = {
     tileX: snap.x,
@@ -105,6 +111,7 @@ export async function loadParty(): Promise<SaveSnapshot | null> {
   const flags = (p.flags ?? {}) as {
     members?: Character[];
     inventory?: InventoryItem[];
+    explored?: string;
   };
   return {
     x: p.tileX,
@@ -113,5 +120,6 @@ export async function loadParty(): Promise<SaveSnapshot | null> {
     gold: p.gold,
     members: flags.members ?? [],
     inventory: flags.inventory ?? [],
+    explored: flags.explored,
   };
 }

@@ -28,6 +28,7 @@ import { loadParty, saveParty } from "./actions";
 import { npcReply, type NpcTurn } from "./npc-actions";
 import { Sfx } from "./sfx";
 import { Music } from "./music";
+import { encodeExplored, decodeExplored } from "./explored";
 
 type MemberView = {
   name: string;
@@ -548,6 +549,10 @@ export function GameCanvas() {
           }
         }
         attach(base);
+        // Restore saved fog-of-war (merged with the freshly-revealed spawn).
+        if (loaded?.explored && exploredRef.current) {
+          decodeExplored(loaded.explored, exploredRef.current);
+        }
       })
       .catch(() => attach());
 
@@ -587,6 +592,9 @@ export function GameCanvas() {
       gold: p.gold,
       members: p.members,
       inventory: p.inventory,
+      explored: exploredRef.current
+        ? encodeExplored(exploredRef.current)
+        : undefined,
     });
     if (r.ok) {
       setSaved(true);
