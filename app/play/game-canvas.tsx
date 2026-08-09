@@ -683,8 +683,14 @@ export function GameCanvas() {
                   <li className="text-amber-700">Inside: {hud.locationName}</li>
                 ) : hud.place ? (
                   <li className="text-amber-700">
-                    Here: {hud.place.name} ({hud.place.category.toLowerCase()}) —
-                    press Enter
+                    Here: {hud.place.name}
+                    {hud.place.stars ? (
+                      <span className="text-yellow-500">
+                        {" "}
+                        {"★".repeat(hud.place.stars)}
+                      </span>
+                    ) : null}{" "}
+                    ({hud.place.category.toLowerCase()}) — press Enter
                   </li>
                 ) : null}
               </ul>

@@ -6,6 +6,8 @@ import type { GameState, Tile, TileKind } from "../types";
 import {
   renderTilePattern,
   SPRITES,
+  STAR_OVERLAYS,
+  starOverlayKey,
   TILE_PATTERNS,
   VENUE_TILES,
   VENUE_LANDMARK_TILES,
@@ -79,6 +81,7 @@ export class CanvasRenderer {
     for (const [key, pattern] of Object.entries({
       ...VENUE_TILES,
       ...VENUE_LANDMARK_TILES,
+      ...STAR_OVERLAYS,
     })) {
       this.venueAtlas[key] = bake(pattern);
     }
@@ -103,6 +106,10 @@ export class CanvasRenderer {
       const img = this.venueAtlas[key] ?? this.atlas.venue;
       if (img) {
         this.ctx.drawImage(img, px, py);
+        // Michelin star badge on top, if any.
+        const star = starOverlayKey(tile.venueStars);
+        const overlay = star ? this.venueAtlas[star] : undefined;
+        if (overlay) this.ctx.drawImage(overlay, px, py);
         return;
       }
     }

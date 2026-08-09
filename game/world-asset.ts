@@ -12,6 +12,8 @@ export interface VenueInfo {
   category: string;
   x: number;
   y: number;
+  /** Michelin star count (1–3), when the venue is a starred restaurant. */
+  stars?: number;
 }
 
 export interface Station {
@@ -69,6 +71,7 @@ export function mapFromAsset(asset: WorldAsset): GameMap {
         t.locationId = v.id;
         t.venueCategory = v.category;
         t.venueName = v.name;
+        if (v.stars) t.venueStars = v.stars;
       }
     }
   }

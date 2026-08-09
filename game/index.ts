@@ -19,7 +19,9 @@ export {
   SPRITES,
   VENUE_TILES,
   VENUE_LANDMARK_TILES,
+  STAR_OVERLAYS,
   venueIconKey,
+  starOverlayKey,
 } from "./renderer/tiles";
 export type { TilePattern } from "./renderer/tiles";
 export { GameController } from "./controller";

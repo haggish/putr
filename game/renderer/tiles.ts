@@ -374,6 +374,80 @@ export function venueIconKey(name?: string, category?: string): string {
   return "DEFAULT";
 }
 
+// Gold star badge drawn over a Michelin-starred restaurant's tile (top-left
+// corner), one gold pip per star. Dark outline keeps it legible on any icon.
+export const STAR_OVERLAYS: Record<string, TilePattern> = {
+  star1: {
+    palette: { ".": null, g: "#f5d020", d: "#3a2a08" },
+    rows: [
+      "................",
+      ".dgd............",
+      ".ggg............",
+      ".dgd............",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+    ],
+  },
+  star2: {
+    palette: { ".": null, g: "#f5d020", d: "#3a2a08" },
+    rows: [
+      "................",
+      ".dgd.dgd........",
+      ".ggg.ggg........",
+      ".dgd.dgd........",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+    ],
+  },
+  star3: {
+    palette: { ".": null, g: "#f5d020", d: "#3a2a08" },
+    rows: [
+      "................",
+      ".dgd.dgd.dgd....",
+      ".ggg.ggg.ggg....",
+      ".dgd.dgd.dgd....",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+    ],
+  },
+};
+
+/** Star-overlay key for a star count (1–3), or undefined. */
+export function starOverlayKey(stars?: number): string | undefined {
+  if (!stars || stars < 1) return undefined;
+  return `star${Math.min(3, stars)}`;
+}
+
 export const TILE_PATTERNS: Record<TileKind, TilePattern> = {
   water: {
     palette: { ".": "#2a4d69", "~": "#3a6a8c", d: "#20415c" },

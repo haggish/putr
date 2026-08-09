@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
   SPRITES,
+  STAR_OVERLAYS,
+  starOverlayKey,
   TILE_PATTERNS,
   VENUE_TILES,
   VENUE_LANDMARK_TILES,
@@ -13,6 +15,7 @@ const all: Record<string, TilePattern> = {
   ...SPRITES,
   ...VENUE_TILES,
   ...VENUE_LANDMARK_TILES,
+  ...STAR_OVERLAYS,
 };
 
 describe("pixel-art patterns", () => {
@@ -43,5 +46,17 @@ describe("pixel-art patterns", () => {
     // Unknown / OTHER falls back to the gold default.
     expect(venueIconKey("Some Place", "OTHER")).toBe("DEFAULT");
     expect(venueIconKey()).toBe("DEFAULT");
+  });
+
+  it("maps star counts to a star overlay that exists", () => {
+    expect(starOverlayKey(0)).toBeUndefined();
+    expect(starOverlayKey(undefined)).toBeUndefined();
+    expect(starOverlayKey(1)).toBe("star1");
+    expect(starOverlayKey(2)).toBe("star2");
+    expect(starOverlayKey(3)).toBe("star3");
+    expect(starOverlayKey(5)).toBe("star3"); // clamps
+    for (const k of ["star1", "star2", "star3"]) {
+      expect(STAR_OVERLAYS[k]).toBeDefined();
+    }
   });
 });

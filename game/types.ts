@@ -33,6 +33,8 @@ export interface Tile {
   venueCategory?: string;
   /** Set when kind === "venue": the venue's name (for named-landmark icons). */
   venueName?: string;
+  /** Michelin star count (1–3) for a starred restaurant; drives a star marker. */
+  venueStars?: number;
 }
 
 export interface GameMap {
